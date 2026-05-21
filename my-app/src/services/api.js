@@ -1,5 +1,5 @@
 // Base API config – tự động đính kèm JWT Token vào mọi request
-const BASE_URL = import.meta.env.VITE_API_URL || 'https://localhost:7088/api';
+const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5092/api' || 'https://localhost:7088/api';
 
 function getAuthHeaders() {
   const token = localStorage.getItem('renats_token');
