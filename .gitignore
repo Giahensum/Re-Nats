@@ -122,10 +122,10 @@ logs/
 
 # appsettings.json        → SAFE để commit (chỉ chứa placeholder)
 # appsettings.*.json      → KHÔNG commit (chứa secrets thật)
-appsettings.json
-appsettings.Development.json
-appsettings.Production.json
-appsettings.Staging.json
+**/appsettings.json
+**/appsettings.Development.json
+**/appsettings.Production.json
+**/appsettings.Staging.json
 
 # ══════════════════════════════════════════════
 #  UPLOAD FILES
