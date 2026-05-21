@@ -125,7 +125,7 @@ const SellerProfile = () => {
 
             {/* Topbar */}
             <header className="sticky top-0 z-50 bg-white/80 backdrop-blur border-b border-slate-200">
-                <div className="max-w-2xl mx-auto px-4 h-14 flex items-center justify-between">
+                <div className="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between">
                     <button onClick={() => navigate('/seller/dashboard')}
                         className="flex items-center gap-1.5 text-sm font-semibold text-slate-600 hover:text-slate-900 transition-colors">
                         <IconBack />
@@ -136,141 +136,189 @@ const SellerProfile = () => {
                 </div>
             </header>
 
-            <main className="max-w-2xl mx-auto px-4 py-8 space-y-5">
-
-                {/* ── Avatar & Stats ── */}
-                <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6">
-                    <div className="flex items-start gap-5">
-                        {/* Avatar */}
-                        <div className="relative flex-shrink-0">
-                            <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-emerald-500 to-green-700 flex items-center justify-center text-white font-extrabold text-3xl shadow-lg">
-                                {profile.name ? profile.name.charAt(0) : 'U'}
+            <main className="max-w-6xl mx-auto px-4 py-8">
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+                    {/* Left column (col-span-1) - Profile Card & Quick Actions */}
+                    <div className="space-y-5">
+                        {/* ── Avatar & Stats Card ── */}
+                        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6 space-y-5">
+                            <div className="flex flex-col items-center text-center space-y-3">
+                                {/* Avatar */}
+                                <div className="relative">
+                                    <div className="w-24 h-24 rounded-2xl bg-gradient-to-br from-emerald-500 to-green-700 flex items-center justify-center text-white font-extrabold text-4xl shadow-lg ring-4 ring-emerald-50">
+                                        {profile.name ? profile.name.charAt(0) : 'U'}
+                                    </div>
+                                    <button className="absolute -bottom-1.5 -right-1.5 w-8 h-8 bg-white border border-slate-200 rounded-lg flex items-center justify-center shadow-sm hover:bg-slate-50 transition-colors">
+                                        <IconCamera />
+                                    </button>
+                                </div>
+                                
+                                {/* Name & Basic Info */}
+                                <div>
+                                    <h1 className="text-xl font-extrabold text-slate-900">{profile.name}</h1>
+                                    <p className="text-xs text-slate-400 mt-1">{profile.phone}</p>
+                                    <p className="text-xs text-slate-400">{profile.email}</p>
+                                </div>
                             </div>
-                            <button className="absolute -bottom-1.5 -right-1.5 w-7 h-7 bg-white border border-slate-200 rounded-lg flex items-center justify-center shadow-sm hover:bg-slate-50 transition-colors">
-                                <IconCamera />
-                            </button>
-                        </div>
 
-                        {/* Info */}
-                        <div className="flex-1 min-w-0">
-                            <h1 className="text-xl font-extrabold text-slate-900">{profile.name}</h1>
-                            <p className="text-sm text-slate-400 mt-0.5">{profile.phone} · {profile.address}</p>
-                            {/* Stats */}
-                            <div className="flex gap-5 mt-4">
+                            <hr className="border-slate-100" />
+
+                            {/* Stats Grid inside Profile Card */}
+                            <div className="grid grid-cols-3 gap-2">
                                 {stats.map(s => (
-                                    <div key={s.label} className="text-center">
-                                        <p className="text-lg font-extrabold text-slate-800">{s.value}</p>
-                                        <p className="text-xs text-slate-400">{s.label}</p>
+                                    <div key={s.label} className="bg-slate-50 rounded-xl p-2.5 text-center">
+                                        <p className="text-base font-black text-slate-800">{s.value}</p>
+                                        <p className="text-[10px] text-slate-400 font-semibold leading-tight mt-0.5">{s.label}</p>
                                     </div>
                                 ))}
                             </div>
                         </div>
+
+                        {/* Quick Info card or Navigation Links */}
+                        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5 space-y-3">
+                            <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Lối tắt nhanh</p>
+                            <Link to="/seller/dashboard" className="flex items-center justify-between text-sm font-semibold text-slate-600 hover:text-slate-900 transition-colors p-2 hover:bg-slate-50 rounded-xl">
+                                <span>← Quay lại Dashboard</span>
+                            </Link>
+                            <button onClick={() => navigate('/')}
+                                className="w-full py-3 rounded-xl border border-red-100 text-red-500 font-semibold text-sm hover:bg-red-50 transition-colors text-center mt-2">
+                                Đăng xuất tài khoản
+                            </button>
+                        </div>
                     </div>
-                </div>
 
-                {/* ── Basic Info ── */}
-                <Section title="Thông tin cá nhân" subtitle="Cập nhật tên, số điện thoại và địa chỉ mặc định">
-                    <Field label="Họ và tên (chỉ đọc)">
-                        <input className={readonlyCls} value={profile.name} readOnly />
-                    </Field>
-                    <Field label="Số điện thoại (chỉ đọc)">
-                        <input className={readonlyCls} value={profile.phone} readOnly />
-                    </Field>
-                    <Field label="Email">
-                        <input className={readonlyCls} value={profile.email} readOnly />
-                        <p className="text-xs text-slate-400 mt-1">Email không thể thay đổi</p>
-                    </Field>
-                    <Field label="Địa chỉ mặc định">
-                        <input className={inputCls} value={profile.address} onChange={setP('address')} placeholder="Quận / Huyện, Tỉnh / TP" />
-                    </Field>
-                    <Field label="Giới thiệu bản thân">
-                        <textarea rows={3} className={inputCls + ' resize-none'} value={profile.bio} onChange={setP('bio')}
-                            placeholder="Ví dụ: Tôi chuyên thu gom đồng cáp và kim loại màu ở khu vực Quận 9..." />
-                    </Field>
+                    {/* Right column (col-span-2) - Form sections */}
+                    <div className="lg:col-span-2 space-y-6">
+                        {/* ── Basic Info ── */}
+                        <Section title="Thông tin cá nhân" subtitle="Cập nhật địa chỉ mặc định và phần mô tả cá nhân của bạn">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <Field label="Họ và tên (chỉ đọc)">
+                                    <input className={readonlyCls} value={profile.name} readOnly />
+                                </Field>
+                                <Field label="Số điện thoại (chỉ đọc)">
+                                    <input className={readonlyCls} value={profile.phone} readOnly />
+                                </Field>
+                            </div>
+                            <Field label="Địa chỉ Email (chỉ đọc)">
+                                <input className={readonlyCls} value={profile.email} readOnly />
+                                <p className="text-xs text-slate-400 mt-1">Email đăng ký tài khoản không thể thay đổi</p>
+                            </Field>
+                            <Field label="Địa chỉ mặc định">
+                                <input className={inputCls} value={profile.address} onChange={setP('address')} placeholder="Quận / Huyện, Tỉnh / TP" />
+                            </Field>
+                            <Field label="Giới thiệu bản thân">
+                                <textarea rows={3} className={inputCls + ' resize-none'} value={profile.bio} onChange={setP('bio')}
+                                    placeholder="Ví dụ: Tôi chuyên thu gom đồng cáp và kim loại màu ở khu vực Quận 9..." />
+                            </Field>
 
-                    <button onClick={handleSaveProfile}
-                        className={`w-full py-3 rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2
-                            ${saved ? 'bg-emerald-600 text-white' : 'bg-green-700 hover:bg-green-800 text-white shadow-md shadow-green-100 hover:scale-[1.01]'}`}>
-                        {saved ? <><IconCheck /> Đã lưu!</> : 'Lưu thay đổi'}
-                    </button>
-                </Section>
+                            <button onClick={handleSaveProfile}
+                                className={`w-full py-3 rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2
+                                    ${saved ? 'bg-emerald-600 text-white' : 'bg-green-700 hover:bg-green-800 text-white shadow-md shadow-green-100 hover:scale-[1.01]'}`}>
+                                {saved ? <><IconCheck /> Đã lưu thông tin!</> : 'Lưu thay đổi'}
+                            </button>
+                        </Section>
 
-                {/* ── Change Password ── */}
-                <Section title="Đổi mật khẩu" subtitle="Đặt mật khẩu mạnh để bảo mật tài khoản">
-                    {[
-                        { label: 'Mật khẩu hiện tại', field: 'old', placeholder: '••••••••' },
-                        { label: 'Mật khẩu mới', field: 'new', placeholder: 'Ít nhất 8 ký tự' },
-                        { label: 'Xác nhận mật khẩu mới', field: 'confirm', placeholder: 'Nhập lại mật khẩu mới' },
-                    ].map(({ label, field, placeholder }) => (
-                        <Field key={field} label={label}>
-                            <div className="relative">
-                                <input
-                                    type={showPwd[field] ? 'text' : 'password'}
-                                    className={inputCls + ' pr-11'}
-                                    value={pwd[field]}
-                                    onChange={setPw(field)}
-                                    placeholder={placeholder}
-                                />
-                                <button type="button"
-                                    onClick={() => setShowPwd(p => ({ ...p, [field]: !p[field] }))}
-                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors">
-                                    <IconEye show={showPwd[field]} />
+                        {/* ── Change Password ── */}
+                        <Section title="Bảo mật & Đổi mật khẩu" subtitle="Đặt mật khẩu mạnh để bảo vệ an toàn cho tài khoản">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div className="md:col-span-2">
+                                    <Field label="Mật khẩu hiện tại">
+                                        <div className="relative">
+                                            <input
+                                                type={showPwd.old ? 'text' : 'password'}
+                                                className={inputCls + ' pr-11'}
+                                                value={pwd.old}
+                                                onChange={setPw('old')}
+                                                placeholder="••••••••"
+                                            />
+                                            <button type="button"
+                                                onClick={() => setShowPwd(p => ({ ...p, old: !p.old }))}
+                                                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors">
+                                                <IconEye show={showPwd.old} />
+                                            </button>
+                                        </div>
+                                    </Field>
+                                </div>
+                                <Field label="Mật khẩu mới">
+                                    <div className="relative">
+                                        <input
+                                            type={showPwd.new ? 'text' : 'password'}
+                                            className={inputCls + ' pr-11'}
+                                            value={pwd.new}
+                                            onChange={setPw('new')}
+                                            placeholder="Ít nhất 8 ký tự"
+                                        />
+                                        <button type="button"
+                                            onClick={() => setShowPwd(p => ({ ...p, new: !p.new }))}
+                                            className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors">
+                                            <IconEye show={showPwd.new} />
+                                        </button>
+                                    </div>
+                                </Field>
+                                <Field label="Xác nhận mật khẩu mới">
+                                    <div className="relative">
+                                        <input
+                                            type={showPwd.confirm ? 'text' : 'password'}
+                                            className={inputCls + ' pr-11'}
+                                            value={pwd.confirm}
+                                            onChange={setPw('confirm')}
+                                            placeholder="Nhập lại mật khẩu mới"
+                                        />
+                                        <button type="button"
+                                            onClick={() => setShowPwd(p => ({ ...p, confirm: !p.confirm }))}
+                                            className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors">
+                                            <IconEye show={showPwd.confirm} />
+                                        </button>
+                                    </div>
+                                </Field>
+                            </div>
+
+                            {/* Password strength indicator */}
+                            {pwd.new && (
+                                <div className="pt-1">
+                                    <div className="flex gap-1 mb-1">
+                                        {[1, 2, 3, 4].map(i => (
+                                            <div key={i} className={`flex-1 h-1 rounded-full transition-colors ${pwd.new.length >= i * 2
+                                                    ? pwd.new.length >= 8 ? 'bg-emerald-500' : 'bg-amber-400'
+                                                    : 'bg-slate-200'
+                                                }`} />
+                                        ))}
+                                    </div>
+                                    <p className="text-xs text-slate-400">
+                                        Độ mạnh: {pwd.new.length < 6 ? 'Yếu' : pwd.new.length < 8 ? 'Trung bình' : 'Mạnh'}
+                                    </p>
+                                </div>
+                            )}
+
+                            <button
+                                onClick={handleChangePwd}
+                                disabled={!pwd.old || !pwd.new || pwd.new !== pwd.confirm}
+                                className={`w-full py-3 rounded-xl font-bold text-sm transition-all ${pwd.old && pwd.new && pwd.new === pwd.confirm
+                                        ? 'bg-slate-900 hover:bg-slate-800 text-white shadow-md hover:scale-[1.01]'
+                                        : 'bg-slate-100 text-slate-400 cursor-not-allowed'
+                                    }`}>
+                                Cập nhật mật khẩu mới
+                            </button>
+                        </Section>
+
+                        {/* ── Danger zone ── */}
+                        <div className="bg-white rounded-2xl border border-red-100 shadow-sm overflow-hidden">
+                            <div className="px-6 py-5 border-b border-red-100">
+                                <h2 className="font-extrabold text-red-600">Vùng nguy hiểm</h2>
+                                <p className="text-sm text-slate-400 mt-0.5">Các thao tác không thể khôi phục</p>
+                            </div>
+                            <div className="px-6 py-5 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                                <div>
+                                    <p className="text-sm font-semibold text-slate-700">Xoá tài khoản vĩnh viễn</p>
+                                    <p className="text-xs text-slate-400 mt-0.5">Tất cả dữ liệu giao dịch, tin đăng và hồ sơ cá nhân sẽ bị xóa vĩnh viễn khỏi hệ thống.</p>
+                                </div>
+                                <button className="px-5 py-2.5 rounded-xl border border-red-200 text-red-500 text-sm font-bold hover:bg-red-50 transition-colors whitespace-nowrap self-start md:self-center">
+                                    Xoá tài khoản
                                 </button>
                             </div>
-                        </Field>
-                    ))}
-
-                    {/* Password strength indicator */}
-                    {pwd.new && (
-                        <div>
-                            <div className="flex gap-1 mb-1">
-                                {[1, 2, 3, 4].map(i => (
-                                    <div key={i} className={`flex-1 h-1 rounded-full transition-colors ${pwd.new.length >= i * 2
-                                            ? pwd.new.length >= 8 ? 'bg-emerald-500' : 'bg-amber-400'
-                                            : 'bg-slate-200'
-                                        }`} />
-                                ))}
-                            </div>
-                            <p className="text-xs text-slate-400">
-                                {pwd.new.length < 6 ? 'Yếu' : pwd.new.length < 8 ? 'Trung bình' : 'Mạnh'}
-                            </p>
                         </div>
-                    )}
-
-                    <button
-                        onClick={handleChangePwd}
-                        disabled={!pwd.old || !pwd.new || pwd.new !== pwd.confirm}
-                        className={`w-full py-3 rounded-xl font-bold text-sm transition-all ${pwd.old && pwd.new && pwd.new === pwd.confirm
-                                ? 'bg-slate-900 hover:bg-slate-800 text-white shadow-md hover:scale-[1.01]'
-                                : 'bg-slate-100 text-slate-400 cursor-not-allowed'
-                            }`}>
-                        Cập nhật mật khẩu
-                    </button>
-                </Section>
-
-                {/* ── Danger zone ── */}
-                <div className="bg-white rounded-2xl border border-red-100 shadow-sm overflow-hidden">
-                    <div className="px-6 py-5 border-b border-red-100">
-                        <h2 className="font-extrabold text-red-600">Vùng nguy hiểm</h2>
-                        <p className="text-sm text-slate-400 mt-0.5">Các thao tác không thể khôi phục</p>
-                    </div>
-                    <div className="px-6 py-5 flex items-center justify-between">
-                        <div>
-                            <p className="text-sm font-semibold text-slate-700">Xoá tài khoản</p>
-                            <p className="text-xs text-slate-400 mt-0.5">Tất cả dữ liệu sẽ bị xóa vĩnh viễn</p>
-                        </div>
-                        <button className="px-4 py-2 rounded-xl border border-red-200 text-red-500 text-sm font-semibold hover:bg-red-50 transition-colors">
-                            Xoá tài khoản
-                        </button>
                     </div>
                 </div>
-
-                {/* Logout */}
-                <button onClick={() => navigate('/')}
-                    className="w-full py-3.5 rounded-xl border border-slate-200 text-slate-500 font-semibold text-sm hover:bg-slate-100 transition-colors">
-                    Đăng xuất
-                </button>
-
             </main>
         </div>
     );

@@ -224,7 +224,7 @@ const SellerDashboard = () => {
         <div className="font-sans bg-slate-50 min-h-screen">
             {/* Header */}
             <header className="sticky top-0 z-50 bg-white/80 backdrop-blur border-b border-slate-200">
-                <div className="max-w-2xl mx-auto px-4 h-16 flex items-center justify-between">
+                <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
                     <div className="flex items-center gap-2.5">
                         <img src="/logo.jpg" alt="Re-Nats" className="h-8 w-auto" />
                         <div>
@@ -242,58 +242,94 @@ const SellerDashboard = () => {
                 </div>
             </header>
 
-            <main className="max-w-2xl mx-auto px-4 py-6 space-y-5">
-                {/* Greeting + CTA */}
-                <div className="flex items-start justify-between gap-4">
-                    <Link to="/seller/dang-tin"
-                        className="flex items-center gap-1.5 bg-green-700 hover:bg-green-800 text-white px-4 py-2.5 rounded-xl font-bold text-sm shadow-md shadow-green-200 transition-all hover:scale-[1.02] whitespace-nowrap flex-shrink-0">
-                        <IconPlus /> Đăng bán
-                    </Link>
-                </div>
-
-                {/* Stats */}
-                <div className="grid grid-cols-4 gap-2">
-                    {stats.map(s => (
-                        <div key={s.label} className={`${s.bg} rounded-2xl p-3 text-center`}>
-                            <p className={`text-2xl font-extrabold ${s.color}`}>{s.value}</p>
-                            <p className="text-xs text-slate-500 font-medium leading-tight mt-0.5">{s.label}</p>
+            <main className="max-w-6xl mx-auto px-4 py-6">
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+                    {/* Left main column (2/3 width) - Filter & Request List */}
+                    <div className="lg:col-span-2 space-y-5">
+                        {/* Header and Title */}
+                        <div className="flex items-center justify-between">
+                            <h1 className="text-xl font-extrabold text-slate-900">Yêu cầu thu gom</h1>
+                            <span className="text-xs text-slate-400 font-medium">Cập nhật liên tục</span>
                         </div>
-                    ))}
-                </div>
 
-                {/* Filter tabs */}
-                <div className="flex gap-2 overflow-x-auto pb-1 -mx-4 px-4">
-                    {FILTERS.map(f => (
-                        <button key={f.key} onClick={() => setFilter(f.key)}
-                            className={`px-3.5 py-1.5 rounded-xl text-sm font-semibold whitespace-nowrap transition-all flex-shrink-0
-                                ${filter === f.key ? 'bg-slate-900 text-white' : 'bg-white border border-slate-200 text-slate-500 hover:bg-slate-50'}`}>
-                            {f.label}
-                        </button>
-                    ))}
-                </div>
+                        {/* Filter tabs */}
+                        <div className="flex gap-2 overflow-x-auto pb-1">
+                            {FILTERS.map(f => (
+                                <button key={f.key} onClick={() => setFilter(f.key)}
+                                    className={`px-3.5 py-1.5 rounded-xl text-sm font-semibold whitespace-nowrap transition-all flex-shrink-0
+                                        ${filter === f.key ? 'bg-slate-900 text-white shadow-sm' : 'bg-white border border-slate-200 text-slate-500 hover:bg-slate-50'}`}>
+                                    {f.label}
+                                </button>
+                            ))}
+                        </div>
 
-                {/* Request list */}
-                <div className="space-y-3">
-                    {loading ? (
-                        <div className="text-center text-slate-400 py-10">Đang tải dữ liệu...</div>
-                    ) : requests.length === 0 ? (
-                        <div className="text-center py-16">
-                            <p className="text-4xl mb-3">♻️</p>
-                            <p className="font-semibold text-slate-500">Không có yêu cầu nào</p>
-                            <Link to="/seller/dang-tin" className="mt-3 inline-block text-sm text-green-700 font-semibold">
-                                + Đăng bán ngay
+                        {/* Request list */}
+                        <div className="space-y-3">
+                            {loading ? (
+                                <div className="text-center text-slate-400 py-10 bg-white border border-slate-100 rounded-2xl">Đang tải dữ liệu...</div>
+                            ) : requests.length === 0 ? (
+                                <div className="text-center py-16 bg-white border border-slate-100 rounded-2xl">
+                                    <p className="text-4xl mb-3">♻️</p>
+                                    <p className="font-semibold text-slate-500">Không có yêu cầu nào</p>
+                                    <Link to="/seller/dang-tin" className="mt-3 inline-block text-sm text-green-700 font-semibold">
+                                        + Đăng bán ngay
+                                    </Link>
+                                </div>
+                            ) : (
+                                requests.map(req => (
+                                    <RequestCard
+                                        key={req.id}
+                                        req={req}
+                                        expanded={expanded === req.id}
+                                        onToggle={() => setExpanded(expanded === req.id ? null : req.id)}
+                                    />
+                                ))
+                            )}
+                        </div>
+                    </div>
+
+                    {/* Right sidebar column (1/3 width) - Quick Actions & Stats */}
+                    <div className="space-y-5">
+                        {/* Quick profile / Action card */}
+                        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5 space-y-4">
+                            <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-green-700 flex items-center justify-center text-white font-extrabold text-lg">
+                                    G
+                                </div>
+                                <div>
+                                    <p className="text-sm font-extrabold text-slate-800">Chào mừng trở lại!</p>
+                                    <p className="text-xs text-slate-400">Bạn muốn bán gì hôm nay?</p>
+                                </div>
+                            </div>
+                            
+                            <Link to="/seller/dang-tin"
+                                className="flex items-center justify-center gap-2 bg-green-700 hover:bg-green-800 text-white w-full py-3 rounded-xl font-bold text-sm shadow-md shadow-green-200 transition-all hover:scale-[1.01]">
+                                <IconPlus /> Đăng bán phế liệu
                             </Link>
                         </div>
-                    ) : (
-                        requests.map(req => (
-                            <RequestCard
-                                key={req.id}
-                                req={req}
-                                expanded={expanded === req.id}
-                                onToggle={() => setExpanded(expanded === req.id ? null : req.id)}
-                            />
-                        ))
-                    )}
+
+                        {/* Stats Card */}
+                        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5 space-y-4">
+                            <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Thống kê hoạt động</p>
+                            <div className="grid grid-cols-2 gap-3">
+                                {stats.map(s => (
+                                    <div key={s.label} className={`${s.bg} rounded-xl p-3.5 text-center transition-all hover:shadow-sm`}>
+                                        <p className={`text-2xl font-black ${s.color}`}>{s.value}</p>
+                                        <p className="text-xs text-slate-500 font-semibold leading-tight mt-1">{s.label}</p>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                        
+                        {/* Quick Info / FAQ Tips Card */}
+                        <div className="bg-slate-900 text-slate-100 rounded-2xl p-5 space-y-3 relative overflow-hidden">
+                            <div className="absolute -right-4 -bottom-4 w-20 h-20 bg-green-700/20 rounded-full blur-xl" />
+                            <p className="text-xs font-bold text-green-400 uppercase tracking-wider">Mẹo bán hàng 💡</p>
+                            <p className="text-xs text-slate-300 leading-relaxed">
+                                Phân loại và bó gọn phế liệu trước khi kho đến thu gom sẽ giúp quá trình cân hàng diễn ra nhanh chóng hơn và nhận được đánh giá cao từ đối tác!
+                            </p>
+                        </div>
+                    </div>
                 </div>
             </main>
         </div>

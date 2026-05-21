@@ -27,11 +27,20 @@ builder.Services.AddCors(options =>
     options.AddPolicy("AllowFrontend", policy =>
     {
         policy.SetIsOriginAllowed(origin =>
-                new Uri(origin).Host == "localhost" ||
-                new Uri(origin).Host == "127.0.0.1"
-              )
-              .AllowAnyHeader()
-              .AllowAnyMethod();
+        {
+            if (string.IsNullOrEmpty(origin) || origin == "null") return false;
+            try
+            {
+                var uri = new Uri(origin);
+                return uri.Host == "localhost" || uri.Host == "127.0.0.1";
+            }
+            catch
+            {
+                return false;
+            }
+        })
+        .AllowAnyHeader()
+        .AllowAnyMethod();
     });
 });
 
@@ -61,7 +70,10 @@ if (app.Environment.IsDevelopment())
 
 app.UseCors("AllowFrontend");
 
-app.UseHttpsRedirection();
+if (!app.Environment.IsDevelopment())
+{
+    app.UseHttpsRedirection();
+}
 
 app.UseAuthorization();
 
