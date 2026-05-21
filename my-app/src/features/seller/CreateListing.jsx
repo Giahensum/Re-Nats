@@ -103,83 +103,73 @@ const Step1 = ({ selected, setSelected, description, setDescription }) => {
         setSelected(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
 
     return (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Left side: Grid of categories (col-span-2) */}
-            <div className="lg:col-span-2 space-y-4">
-                <div>
-                    <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">
-                        Loại phế liệu muốn bán <span className="text-red-400">*</span>
-                    </p>
-                    <p className="text-xs text-slate-400 mb-3">Chọn tất cả các loại bạn có — kho sẽ đến cân</p>
-                    
-                    {/* Tile grid */}
-                    <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
-                        {WASTE_CATALOGUE.map(w => {
-                            const isSel = selected.includes(w.id);
-                            const a = ACCENT[w.color];
+        <div className="space-y-5">
+            <div>
+                <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">
+                    Loại phế liệu muốn bán <span className="text-red-400">*</span>
+                </p>
+                <p className="text-xs text-slate-400 mb-3">Chọn tất cả các loại bạn có — kho sẽ đến cân</p>
+
+                {/* Selected tags */}
+                {selected.length > 0 && (
+                    <div className="flex flex-wrap gap-2 mb-3 p-3 bg-green-50 rounded-xl border border-green-100">
+                        {selected.map(id => {
+                            const w = WASTE_CATALOGUE.find(x => x.id === id);
                             return (
-                                <button key={w.id} onClick={() => toggle(w.id)}
-                                    className={`relative flex flex-col items-center justify-center gap-1.5 p-3 rounded-xl border-2 text-center transition-all active:scale-95 cursor-pointer
-                                        ${isSel
-                                            ? `${a.sel} shadow-md ring-2 ${a.ring} ring-offset-1`
-                                            : 'bg-white border-slate-200 text-slate-700 hover:border-slate-300 hover:bg-slate-50'
-                                        }`}
-                                >
-                                    <span className="text-2xl leading-none">{w.emoji}</span>
-                                    <div>
-                                        <p className={`text-xs font-bold leading-tight ${isSel ? 'text-inherit' : 'text-slate-700'}`}>{w.label}</p>
-                                        <p className={`text-[10px] ${isSel ? 'text-inherit opacity-80' : 'text-slate-400'}`}>{w.sub}</p>
-                                    </div>
-                                    {isSel && (
-                                        <span className="absolute top-1.5 right-1.5 w-4 h-4 bg-white/30 rounded-full flex items-center justify-center">
-                                            <IconCheck size={3} />
-                                        </span>
-                                    )}
-                                </button>
+                                <span key={id} className="inline-flex items-center gap-1.5 bg-white px-3 py-1.5 rounded-lg border border-green-200 text-sm font-semibold text-green-800 shadow-sm">
+                                    {w.emoji} {w.label}
+                                    <button onClick={() => toggle(id)} className="text-green-500 hover:text-red-500 transition-colors ml-0.5">
+                                        <IconX />
+                                    </button>
+                                </span>
                             );
                         })}
+                        <span className="text-xs text-green-600 self-center ml-1 font-medium">
+                            ✓ {selected.length} loại đã chọn
+                        </span>
                     </div>
+                )}
+
+                {/* Tile grid */}
+                <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+                    {WASTE_CATALOGUE.map(w => {
+                        const isSel = selected.includes(w.id);
+                        const a = ACCENT[w.color];
+                        return (
+                            <button key={w.id} onClick={() => toggle(w.id)}
+                                className={`relative flex flex-col items-center justify-center gap-1.5 p-3 rounded-xl border-2 text-center transition-all active:scale-95 cursor-pointer
+                                    ${isSel
+                                        ? `${a.sel} shadow-md ring-2 ${a.ring} ring-offset-1`
+                                        : 'bg-white border-slate-200 text-slate-700 hover:border-slate-300 hover:bg-slate-50'
+                                    }`}
+                            >
+                                <span className="text-2xl leading-none">{w.emoji}</span>
+                                <div>
+                                    <p className={`text-xs font-bold leading-tight ${isSel ? 'text-inherit' : 'text-slate-700'}`}>{w.label}</p>
+                                    <p className={`text-[10px] ${isSel ? 'text-inherit opacity-80' : 'text-slate-400'}`}>{w.sub}</p>
+                                </div>
+                                {isSel && (
+                                    <span className="absolute top-1.5 right-1.5 w-4 h-4 bg-white/30 rounded-full flex items-center justify-center">
+                                        <IconCheck size={3} />
+                                    </span>
+                                )}
+                            </button>
+                        );
+                    })}
                 </div>
             </div>
 
-            {/* Right side: Selected summary + Description (col-span-1) */}
-            <div className="space-y-5">
-                {/* Selected tags */}
-                <div className="bg-green-50 rounded-2xl border border-green-100 p-4 space-y-3">
-                    <p className="text-xs font-bold text-green-700 uppercase tracking-wider">
-                        Phân loại đã chọn ({selected.length})
+            {/* Description */}
+            <div>
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Mô tả thêm</label>
+                <textarea rows={3} value={description} onChange={e => setDescription(e.target.value)}
+                    placeholder="Mô tả tình trạng, ước lượng nhiều hay ít, ghi chú cho nhân viên thu gom..."
+                    className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-green-600 resize-none" />
+                <div className="mt-2 flex items-start gap-2 bg-amber-50 border border-amber-100 rounded-lg px-3 py-2">
+                    <span className="text-amber-500 text-sm flex-shrink-0">💡</span>
+                    <p className="text-xs text-amber-700">
+                        Bạn <strong>không cần cân</strong> — nhân viên của kho sẽ đến, cân chính xác và báo lại kết quả cho bạn.
                     </p>
-                    {selected.length === 0 ? (
-                        <p className="text-xs text-green-600 italic">Vui lòng chọn ít nhất một loại phế liệu bên trái.</p>
-                    ) : (
-                        <div className="flex flex-wrap gap-1.5">
-                            {selected.map(id => {
-                                const w = WASTE_CATALOGUE.find(x => x.id === id);
-                                return (
-                                    <span key={id} className="inline-flex items-center gap-1 bg-white px-2.5 py-1 rounded-lg border border-green-200 text-xs font-semibold text-green-800 shadow-sm">
-                                        {w.emoji} {w.label}
-                                        <button onClick={() => toggle(id)} className="text-green-500 hover:text-red-500 transition-colors ml-1">
-                                            <IconX />
-                                        </button>
-                                    </span>
-                                );
-                            })}
-                        </div>
-                    )}
-                </div>
-
-                {/* Description */}
-                <div className="space-y-1.5">
-                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider">Mô tả thêm</label>
-                    <textarea rows={4} value={description} onChange={e => setDescription(e.target.value)}
-                        placeholder="Mô tả tình trạng, ước lượng nhiều hay ít, ghi chú cho nhân viên thu gom..."
-                        className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-green-600 resize-none" />
-                    <div className="flex items-start gap-2 bg-amber-50 border border-amber-100 rounded-lg p-3">
-                        <span className="text-amber-500 text-sm flex-shrink-0">💡</span>
-                        <p className="text-xs text-amber-700 leading-normal">
-                            Bạn <strong>không cần cân</strong> — nhân viên của kho sẽ đến, cân chính xác và báo lại kết quả cho bạn.
-                        </p>
-                    </div>
                 </div>
             </div>
         </div>
@@ -198,89 +188,84 @@ const Step2 = ({ form, setForm, images, setImages, fileRef }) => {
     const removeImg = idx => setImages(p => p.filter((_, i) => i !== idx));
 
     return (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Left side: Images & Time selection */}
-            <div className="space-y-6">
-                {/* Images (optional) */}
-                <div>
-                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Hình ảnh phế liệu</label>
-                    <p className="text-xs text-slate-400 mb-3">Không bắt buộc nhưng giúp kho chuẩn bị tốt hơn · Tối đa 6 ảnh</p>
-                    <div className="grid grid-cols-4 gap-2">
-                        {images.map((img, i) => (
-                            <div key={i} className="relative aspect-square rounded-xl overflow-hidden border border-slate-200 group">
-                                <img src={img.url} alt="" className="w-full h-full object-cover" />
-                                <button onClick={() => removeImg(i)}
-                                    className="absolute top-1 right-1 w-5 h-5 bg-black/60 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                                    <IconX />
-                                </button>
-                            </div>
-                        ))}
-                        {images.length < 6 && (
-                            <button onClick={() => fileRef.current?.click()}
-                                className="aspect-square rounded-xl border-2 border-dashed border-slate-200 hover:border-green-500 hover:bg-green-50 flex flex-col items-center justify-center gap-1 transition-colors">
-                                <IconCamera />
-                                <span className="text-xs text-slate-400 font-medium">Thêm ảnh</span>
+        <div className="space-y-6">
+            {/* Images (optional) */}
+            <div>
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Hình ảnh phế liệu</label>
+                <p className="text-xs text-slate-400 mb-3">Không bắt buộc nhưng giúp kho chuẩn bị tốt hơn · Tối đa 6 ảnh</p>
+                <div className="grid grid-cols-4 gap-2">
+                    {images.map((img, i) => (
+                        <div key={i} className="relative aspect-square rounded-xl overflow-hidden border border-slate-200 group">
+                            <img src={img.url} alt="" className="w-full h-full object-cover" />
+                            <button onClick={() => removeImg(i)}
+                                className="absolute top-1 right-1 w-5 h-5 bg-black/60 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                <IconX />
                             </button>
-                        )}
-                    </div>
-                    <input ref={fileRef} type="file" accept="image/*" multiple className="hidden" onChange={handleImages} />
+                        </div>
+                    ))}
+                    {images.length < 6 && (
+                        <button onClick={() => fileRef.current?.click()}
+                            className="aspect-square rounded-xl border-2 border-dashed border-slate-200 hover:border-green-500 hover:bg-green-50 flex flex-col items-center justify-center gap-1 transition-colors">
+                            <IconCamera />
+                            <span className="text-xs text-slate-400 font-medium">Thêm ảnh</span>
+                        </button>
+                    )}
                 </div>
+                <input ref={fileRef} type="file" accept="image/*" multiple className="hidden" onChange={handleImages} />
+            </div>
 
-                {/* Date & Timeslot */}
-                <div>
-                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">
-                        Thời gian có thể thu gom <span className="text-red-400">*</span>
-                    </label>
-                    <input type="date" value={form.pickupDate} onChange={set('pickupDate')}
-                        min={new Date().toISOString().split('T')[0]}
-                        className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm mb-3 focus:outline-none focus:ring-2 focus:ring-green-600" />
-                    <p className="text-xs text-slate-500 mb-2 font-medium">Khung giờ phù hợp</p>
-                    <div className="grid grid-cols-3 gap-2">
-                        {TIME_SLOTS.map(slot => (
-                            <button key={slot} onClick={() => setForm(p => ({ ...p, pickupSlot: slot }))}
-                                className={`py-2.5 px-2 rounded-xl text-xs font-semibold border transition-all ${form.pickupSlot === slot
-                                        ? 'bg-slate-900 text-white border-slate-900 shadow-md'
-                                        : 'bg-white text-slate-600 border-slate-200 hover:border-slate-400'
-                                    }`}>{slot}
-                            </button>
-                        ))}
+            {/* Address */}
+            <div>
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">
+                    Địa chỉ thu gom <span className="text-red-400">*</span>
+                </label>
+                <div className="flex gap-2 mb-2">
+                    <input type="text" placeholder="Nhập địa chỉ cụ thể..." value={form.address} onChange={set('address')}
+                        className="flex-1 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-green-600" />
+                    <button
+                        onClick={() => {
+                            setForm(p => ({ ...p, address: 'Đang lấy vị trí...' }));
+                            navigator.geolocation?.getCurrentPosition(
+                                () => setForm(p => ({ ...p, address: 'Quận 9, TP. Hồ Chí Minh' })),
+                                () => setForm(p => ({ ...p, address: '' }))
+                            );
+                        }}
+                        className="flex items-center gap-1.5 px-4 py-3 bg-slate-100 hover:bg-slate-200 rounded-xl text-sm font-semibold text-slate-700 transition-colors whitespace-nowrap">
+                        <IconPin /> Vị trí của tôi
+                    </button>
+                </div>
+                {/* Map placeholder */}
+                <div className="w-full h-32 rounded-xl bg-slate-100 border border-slate-200 flex items-center justify-center relative overflow-hidden">
+                    <div className="absolute inset-0 bg-[linear-gradient(#e2e8f01a_1px,transparent_1px),linear-gradient(90deg,#e2e8f01a_1px,transparent_1px)] bg-[size:24px_24px]" />
+                    <div className="text-center z-10">
+                        <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center mx-auto mb-1 shadow">
+                            <IconPin />
+                        </div>
+                        <p className="text-xs font-semibold text-slate-500">
+                            {form.address || 'Bản đồ · Google Maps'}
+                        </p>
                     </div>
                 </div>
             </div>
 
-            {/* Right side: Address & Map */}
-            <div className="space-y-4">
-                <div>
-                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">
-                        Địa chỉ thu gom <span className="text-red-400">*</span>
-                    </label>
-                    <div className="flex gap-2 mb-3">
-                        <input type="text" placeholder="Nhập địa chỉ cụ thể..." value={form.address} onChange={set('address')}
-                            className="flex-1 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-green-600" />
-                        <button
-                            onClick={() => {
-                                setForm(p => ({ ...p, address: 'Đang lấy vị trí...' }));
-                                navigator.geolocation?.getCurrentPosition(
-                                    () => setForm(p => ({ ...p, address: 'Quận 9, TP. Hồ Chí Minh' })),
-                                    () => setForm(p => ({ ...p, address: '' }))
-                                );
-                            }}
-                            className="flex items-center gap-1.5 px-4 py-3 bg-slate-100 hover:bg-slate-200 rounded-xl text-sm font-semibold text-slate-700 transition-colors whitespace-nowrap">
-                            <IconPin /> Vị trí
+            {/* Date & Timeslot */}
+            <div>
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">
+                    Thời gian có thể thu gom <span className="text-red-400">*</span>
+                </label>
+                <input type="date" value={form.pickupDate} onChange={set('pickupDate')}
+                    min={new Date().toISOString().split('T')[0]}
+                    className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm mb-3 focus:outline-none focus:ring-2 focus:ring-green-600" />
+                <p className="text-xs text-slate-500 mb-2 font-medium">Khung giờ phù hợp</p>
+                <div className="grid grid-cols-3 gap-2">
+                    {TIME_SLOTS.map(slot => (
+                        <button key={slot} onClick={() => setForm(p => ({ ...p, pickupSlot: slot }))}
+                            className={`py-2.5 px-2 rounded-xl text-xs font-semibold border transition-all ${form.pickupSlot === slot
+                                    ? 'bg-slate-900 text-white border-slate-900 shadow-md'
+                                    : 'bg-white text-slate-600 border-slate-200 hover:border-slate-400'
+                                }`}>{slot}
                         </button>
-                    </div>
-                    {/* Map placeholder */}
-                    <div className="w-full h-64 rounded-xl bg-slate-100 border border-slate-200 flex items-center justify-center relative overflow-hidden">
-                        <div className="absolute inset-0 bg-[linear-gradient(#e2e8f01a_1px,transparent_1px),linear-gradient(90deg,#e2e8f01a_1px,transparent_1px)] bg-[size:24px_24px]" />
-                        <div className="text-center z-10 px-4">
-                            <div className="w-9 h-9 bg-white rounded-full flex items-center justify-center mx-auto mb-2 shadow">
-                                <IconPin />
-                            </div>
-                            <p className="text-xs font-semibold text-slate-500 leading-relaxed max-w-xs mx-auto">
-                                {form.address || 'Bản đồ trực quan hiển thị vị trí thu gom của bạn trên bản đồ'}
-                            </p>
-                        </div>
-                    </div>
+                    ))}
                 </div>
             </div>
         </div>
@@ -291,57 +276,51 @@ const Step2 = ({ form, setForm, images, setImages, fileRef }) => {
 const Step3 = ({ selectedTypes, description, form, images }) => {
     const typeLabels = selectedTypes.map(id => WASTE_CATALOGUE.find(w => w.id === id));
     return (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Left side: Waste details */}
-            <div className="space-y-4">
-                <div className="bg-slate-50 rounded-2xl border border-slate-100 p-5">
-                    <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Loại phế liệu đăng bán ({typeLabels.length})</p>
-                    <div className="flex flex-wrap gap-2">
-                        {typeLabels.map(w => (
-                            <span key={w.id} className="inline-flex items-center gap-1.5 bg-white px-3 py-1.5 rounded-lg border border-slate-200 text-sm font-semibold text-slate-700">
-                                {w.emoji} {w.label}
-                            </span>
-                        ))}
-                    </div>
-                    {description && (
-                        <div className="mt-4 pt-3 border-t border-slate-200/60">
-                            <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Mô tả chi tiết</p>
-                            <p className="text-sm text-slate-600 italic">"{description}"</p>
-                        </div>
-                    )}
-                </div>
+        <div className="space-y-4">
+            <p className="text-sm text-slate-500">Kiểm tra lại trước khi gửi yêu cầu đến kho.</p>
 
-                {images.length > 0 && (
-                    <div className="bg-slate-50 rounded-2xl border border-slate-100 p-5">
-                        <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Hình ảnh đính kèm ({images.length})</p>
-                        <div className="flex gap-2 flex-wrap">
-                            {images.map((img, i) => (
-                                <img key={i} src={img.url} alt="" className="w-16 h-16 object-cover rounded-xl border border-slate-200" />
-                            ))}
-                        </div>
-                    </div>
+            {/* Waste types */}
+            <div className="bg-slate-50 rounded-2xl border border-slate-100 p-4">
+                <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Loại phế liệu ({typeLabels.length})</p>
+                <div className="flex flex-wrap gap-2">
+                    {typeLabels.map(w => (
+                        <span key={w.id} className="inline-flex items-center gap-1.5 bg-white px-2.5 py-1.5 rounded-lg border border-slate-200 text-sm font-semibold text-slate-700">
+                            {w.emoji} {w.label}
+                        </span>
+                    ))}
+                </div>
+                {description && (
+                    <p className="mt-3 text-sm text-slate-500 italic">"{description}"</p>
                 )}
             </div>
 
-            {/* Right side: Scheduling & Action Details */}
-            <div className="space-y-4">
-                <div className="bg-slate-50 rounded-2xl border border-slate-100 divide-y divide-slate-200/60 overflow-hidden">
-                    {[
-                        { label: 'Địa điểm thu gom', value: form.address },
-                        { label: 'Ngày thu gom', value: form.pickupDate },
-                        { label: 'Khung giờ', value: form.pickupSlot },
-                        { label: 'Đính kèm', value: `${images.length} ảnh` },
-                    ].map(({ label, value }) => (
-                        <div key={label} className="flex items-start justify-between px-5 py-4">
-                            <span className="text-sm text-slate-500 w-36 flex-shrink-0">{label}</span>
-                            <span className="text-sm font-bold text-slate-800 text-right">{value || '—'}</span>
-                        </div>
+            {/* Info table */}
+            <div className="bg-slate-50 rounded-2xl border border-slate-100 divide-y divide-slate-200">
+                {[
+                    { label: 'Địa điểm thu gom', value: form.address },
+                    { label: 'Ngày thu gom', value: form.pickupDate },
+                    { label: 'Khung giờ', value: form.pickupSlot },
+                    { label: 'Số ảnh đính kèm', value: `${images.length} ảnh` },
+                ].map(({ label, value }) => (
+                    <div key={label} className="flex items-start justify-between px-5 py-3.5">
+                        <span className="text-sm text-slate-500 w-40 flex-shrink-0">{label}</span>
+                        <span className="text-sm font-semibold text-slate-800 text-right">{value || '—'}</span>
+                    </div>
+                ))}
+            </div>
+
+            {/* Images */}
+            {images.length > 0 && (
+                <div className="flex gap-2 flex-wrap">
+                    {images.map((img, i) => (
+                        <img key={i} src={img.url} alt="" className="w-16 h-16 object-cover rounded-xl border" />
                     ))}
                 </div>
+            )}
 
-                <div className="bg-green-50 border border-green-100 rounded-2xl px-5 py-4 text-sm text-green-700 leading-relaxed">
-                    🏭 <strong>Lưu ý:</strong> Sau khi gửi yêu cầu, <strong>nhân viên kho</strong> sẽ tiếp nhận, liên hệ trực tiếp để xác nhận và sắp xếp xe đến thu gom đúng giờ. Bạn sẽ theo dõi toàn bộ trạng thái cân đo và nhận hóa đơn điện tử ngay trên cổng thông tin này.
-                </div>
+            {/* Note */}
+            <div className="bg-green-50 border border-green-100 rounded-xl px-4 py-3 text-sm text-green-700">
+                🏭 Sau khi gửi, <strong>nhân viên kho</strong> sẽ liên hệ xác nhận lịch đến cân và thu gom. Bạn sẽ nhận thông báo kết quả cân.
             </div>
         </div>
     );
@@ -399,7 +378,7 @@ const CreateListing = () => {
         <div className="font-sans bg-slate-50 min-h-screen">
             {/* Topbar */}
             <header className="sticky top-0 z-50 bg-white/80 backdrop-blur border-b border-slate-200">
-                <div className="max-w-5xl mx-auto px-4 h-14 flex items-center justify-between">
+                <div className="max-w-2xl mx-auto px-4 h-14 flex items-center justify-between">
                     <button onClick={() => step === 0 ? navigate('/seller/dashboard') : setStep(s => s - 1)}
                         className="flex items-center gap-1.5 text-sm font-semibold text-slate-600 hover:text-slate-900 transition-colors">
                         <IconBack /> {step === 0 ? 'Huỷ' : 'Quay lại'}
@@ -409,7 +388,7 @@ const CreateListing = () => {
                 </div>
             </header>
 
-            <main className="max-w-5xl mx-auto px-4 py-8">
+            <main className="max-w-2xl mx-auto px-4 py-8">
                 <StepBar current={step} />
 
                 <div className="mb-6">
@@ -421,7 +400,7 @@ const CreateListing = () => {
                     <p className="text-sm text-slate-400 mt-0.5">Bước {step + 1} / {STEPS.length}</p>
                 </div>
 
-                <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6">
+                <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
                     {step === 0 && <Step1 selected={selectedTypes} setSelected={setSelectedTypes} description={description} setDescription={setDescription} />}
                     {step === 1 && <Step2 form={form} setForm={setForm} images={images} setImages={setImages} fileRef={fileRef} />}
                     {step === 2 && <Step3 selectedTypes={selectedTypes} description={description} form={form} images={images} />}
