@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Renats_BE.Data;
@@ -11,6 +12,7 @@ namespace Renats_BE.Controllers.Seller;
 /// </summary>
 [ApiController]
 [Route("api/seller/pickup-management")]
+[Authorize(Roles = "DEPOT")]
 public class SellerPickupManagementController : ControllerBase
 {
     private readonly AppDbContext _db;

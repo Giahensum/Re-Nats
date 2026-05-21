@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Renats_BE.Data;
@@ -8,6 +9,7 @@ namespace Renats_BE.Controllers.Factory;
 
 [ApiController]
 [Route("api/factory/weighing")]
+[Authorize(Roles = "FACTORY")]
 public class FactoryWeighingController : ControllerBase
 {
     private readonly AppDbContext _db;

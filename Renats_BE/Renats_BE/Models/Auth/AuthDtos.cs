@@ -42,3 +42,15 @@ public class AuthResponse
     public string FullName { get; set; } = string.Empty;
     public string Email { get; set; } = string.Empty;
 }
+
+/// <summary>
+/// Dùng cho đăng nhập bằng Google hoặc Facebook.
+/// Token = Google ID Token hoặc Facebook User Access Token.
+/// Role là tùy chọn: nếu tài khoản mới sẽ dùng role này, mặc định là SELLER.
+/// </summary>
+public class SocialLoginRequest
+{
+    public string Token { get; set; } = string.Empty;
+    public string? Role { get; set; } // optional – dùng khi đây là lần đăng ký đầu tiên
+}
+

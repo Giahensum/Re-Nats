@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Renats_BE.Data;
@@ -6,6 +7,7 @@ namespace Renats_BE.Controllers.Factory;
 
 [ApiController]
 [Route("api/factory/partners")]
+[Authorize(Roles = "FACTORY")]
 public class FactoryPartnerController : ControllerBase
 {
     private readonly AppDbContext _db;

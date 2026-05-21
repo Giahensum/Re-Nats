@@ -1,13 +1,18 @@
 import { api } from './api';
+import { authService } from './authService';
 
-// Hardcoded sellerId for dev – thay bằng auth context sau
-const SELLER_ID = '22222222-2222-2222-2222-222222222222';
+// Lấy sellerId động từ session của User đang đăng nhập
+function getSellerIdFromSession() {
+  const session = authService.getSession();
+  if (!session?.userId) throw new Error('Chưa đăng nhập hoặc không tìm thấy thông tin User.');
+  return session.userId;
+}
 
 export const sellerService = {
-  // ── Dashboard / Requests ──
+  // ── Dashboard / Requests ──────────────────────────────────────────────────
   getRequests: (status) =>
     api.get('/seller/requests', {
-      sellerId: SELLER_ID,
+      sellerId: getSellerIdFromSession(),
       ...(status ? { status } : {}),
     }),
 
@@ -15,26 +20,26 @@ export const sellerService = {
     api.get(`/seller/requests/${id}`),
 
   createRequest: (data) =>
-    api.post('/seller/requests', { sellerId: SELLER_ID, ...data }),
+    api.post('/seller/requests', { sellerId: getSellerIdFromSession(), ...data }),
 
   cancelRequest: (id) =>
     api.patch(`/seller/requests/${id}/cancel`),
 
-  // ── Profile ──
+  // ── Profile ───────────────────────────────────────────────────────────────
   getProfile: () =>
-    api.get(`/seller/profile/${SELLER_ID}`),
+    api.get(`/seller/profile/${getSellerIdFromSession()}`),
 
   updateProfile: (data) =>
-    api.put(`/seller/profile/${SELLER_ID}`, data),
+    api.put(`/seller/profile/${getSellerIdFromSession()}`, data),
 
   changePassword: (oldPassword, newPassword) =>
-    api.patch(`/seller/profile/${SELLER_ID}/change-password`, {
+    api.patch(`/seller/profile/${getSellerIdFromSession()}/change-password`, {
       oldPassword, newPassword,
     }),
 
   deleteAccount: () =>
-    api.delete(`/seller/profile/${SELLER_ID}`),
+    api.delete(`/seller/profile/${getSellerIdFromSession()}`),
 
   getStats: () =>
-    api.get(`/seller/profile/${SELLER_ID}/stats`),
+    api.get(`/seller/profile/${getSellerIdFromSession()}/stats`),
 };

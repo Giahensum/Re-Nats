@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Renats_BE.DTOs.Seller;
 using Renats_BE.Services.Interfaces;
@@ -6,6 +7,7 @@ namespace Renats_BE.Controllers.Seller;
 
 [ApiController]
 [Route("api/seller/profile")]
+[Authorize(Roles = "SELLER")]
 public class SellerProfileController : ControllerBase
 {
     private readonly ISellerService _service;
