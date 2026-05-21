@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { AvatarDropdown } from '../../components/seller/AvatarDropdown';
 import { sellerService } from '../../services/sellerService';
+import { authService } from '../../services/authService';
 
 const WAREHOUSE = 'Kho Re-Nats';
 
@@ -181,6 +182,9 @@ const RequestCard = ({ req, expanded, onToggle }) => {
 
 // ── Main ───────────────────────────────────────────────────────────────────
 const SellerDashboard = () => {
+    const user = authService.getSession();
+    const displayName = user?.fullName || "Người bán";
+
     const [expanded, setExpanded] = useState(null);
     const [filter, setFilter] = useState('all');
     const [requests, setRequests] = useState([]);
@@ -237,11 +241,11 @@ const SellerDashboard = () => {
                             <IconBell />
                             <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full ring-2 ring-white" />
                         </button>
-                        <AvatarDropdown name="Ngô Sỹ Giá" role="Người bán" />
+                        <AvatarDropdown name={displayName} role="Người bán" />
                     </div>
                 </div>
             </header>
-
+ 
             <main className="max-w-6xl mx-auto px-4 py-6">
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
                     {/* Left main column (2/3 width) - Filter & Request List */}
@@ -251,7 +255,7 @@ const SellerDashboard = () => {
                             <h1 className="text-xl font-extrabold text-slate-900">Yêu cầu thu gom</h1>
                             <span className="text-xs text-slate-400 font-medium">Cập nhật liên tục</span>
                         </div>
-
+ 
                         {/* Filter tabs */}
                         <div className="flex gap-2 overflow-x-auto pb-1">
                             {FILTERS.map(f => (
@@ -262,7 +266,7 @@ const SellerDashboard = () => {
                                 </button>
                             ))}
                         </div>
-
+ 
                         {/* Request list */}
                         <div className="space-y-3">
                             {loading ? (
@@ -287,14 +291,14 @@ const SellerDashboard = () => {
                             )}
                         </div>
                     </div>
-
+ 
                     {/* Right sidebar column (1/3 width) - Quick Actions & Stats */}
                     <div className="space-y-5">
                         {/* Quick profile / Action card */}
                         <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5 space-y-4">
                             <div className="flex items-center gap-3">
                                 <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-green-700 flex items-center justify-center text-white font-extrabold text-lg">
-                                    G
+                                    {displayName.charAt(0).toUpperCase()}
                                 </div>
                                 <div>
                                     <p className="text-sm font-extrabold text-slate-800">Chào mừng trở lại!</p>
