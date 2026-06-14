@@ -27,7 +27,6 @@ builder.Services.AddScoped<ISellerService, SellerService>();
 builder.Services.AddScoped<IPickupRequestService, PickupRequestService>();
 builder.Services.AddScoped<ICloudinaryService, CloudinaryService>();
 
-
 // ── HttpClient (dùng cho xác thực token Social từ Google/Facebook) ──────────
 builder.Services.AddHttpClient();
 
@@ -57,15 +56,12 @@ builder.Services.AddAuthentication(options =>
 
 builder.Services.AddAuthorization();
 
-// ── CORS (allow React dev server on any localhost port) ──────────────────────
+// ── CORS (allow frontend to access API) ───────────────────────────────────────
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend", policy =>
     {
-        policy.SetIsOriginAllowed(origin =>
-                new Uri(origin).Host == "localhost" ||
-                new Uri(origin).Host == "127.0.0.1"
-              )
+        policy.AllowAnyOrigin()
               .AllowAnyHeader()
               .AllowAnyMethod();
     });
@@ -112,6 +108,7 @@ var app = builder.Build();
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    await db.Database.MigrateAsync();   // Automatically apply pending migrations to the database
     await DbSeeder.SeedAsync(db);       // Admin account
     await DataSeeder.SeedAsync(db);     // Seller + Factory + Depots + Batches
 }
