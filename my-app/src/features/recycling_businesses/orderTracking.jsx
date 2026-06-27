@@ -122,8 +122,8 @@ const OrderTracking = () => {
     switch (status) {
       case 'ACCEPTED': return 'Đã nhận thầu';
       case 'IN_PROGRESS': return 'Đang vận chuyển';
-      case 'DELIVERED': return 'Chờ cân KCS';
-      case 'VERIFIED': return 'Đã xác thực KCS';
+      case 'DELIVERED': return 'Chờ cân nghiệm thu';
+      case 'VERIFIED': return 'Đã xác thực cân';
       default: return status;
     }
   };
@@ -182,7 +182,7 @@ const OrderTracking = () => {
         payload.longitude = (depotLoc[1] + endLoc[1]) / 2;
         break;
       case 'checkin_factory':
-        payload.note = `[Check-in Nhà Máy] Xe cập cổng bảo vệ Nhà máy Re-Nats Long An. Chờ cân KCS.`;
+        payload.note = `[Check-in Nhà Máy] Xe cập cổng bảo vệ Nhà máy Re-Nats Long An. Chờ cân nghiệm thu.`;
         payload.latitude = endLoc[0];
         payload.longitude = endLoc[1];
         break;
@@ -311,7 +311,7 @@ const OrderTracking = () => {
                 onClick={() => setActiveFilter('DELIVERED')}
                 className={`flex-1 py-2 text-center rounded-lg transition-all ${activeFilter === 'DELIVERED' ? 'bg-white text-green-700 shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}
               >
-                Chờ KCS
+                Chờ trạm cân
               </button>
               <button 
                 onClick={() => setActiveFilter('VERIFIED')}
@@ -600,8 +600,8 @@ const OrderTracking = () => {
                       <span className="material-symbols-outlined text-[14px]">workspace_premium</span>
                     </span>
                     <div>
-                      <h4 className="font-bold text-slate-800 text-sm">Phân đoạn 6: Nghiệm thu KCS &amp; Chốt khối lượng thực tế</h4>
-                      <p className="text-xs text-slate-500 mt-1">Hoàn tất kiểm định độ ẩm, độ lẫn tạp chất, chốt hóa đơn thanh toán &amp; cấp chứng chỉ số.</p>
+                      <h4 className="font-bold text-slate-800 text-sm">Phân đoạn 6: Nghiệm thu &amp; Chốt khối lượng thực tế</h4>
+                      <p className="text-xs text-slate-500 mt-1">Hoàn tất kiểm định độ ẩm, độ lẫn tạp chất và chốt hóa đơn thanh toán.</p>
                       
                       {selectedOrder.status === 'VERIFIED' && (
                         <div className="mt-3 bg-green-50/50 border border-green-200 rounded-xl p-4 flex flex-col md:flex-row justify-between gap-4">
@@ -617,7 +617,7 @@ const OrderTracking = () => {
                             )}
                           </div>
                           <div>
-                            <p className="text-xs text-slate-500 font-bold uppercase">Chất lượng KCS</p>
+                            <p className="text-xs text-slate-500 font-bold uppercase">Chất lượng kiểm nghiệm</p>
                             <p className="text-base font-extrabold text-slate-800">Độ ẩm: 8% • Tạp chất: 3.2%</p>
                             <p className="text-[10px] text-slate-400 mt-0.5">Hàng loại A đạt chuẩn chất lượng</p>
                           </div>
@@ -710,14 +710,14 @@ const OrderTracking = () => {
                           <span className="material-symbols-outlined text-base">verified</span>
                           ĐÃ CHECK-IN TẠI CỔNG NHÀ MÁY
                         </h5>
-                        <p className="text-xs text-slate-400 mt-0.5">Xe đang chờ tại trạm cân KCS. Bạn có muốn duyệt KCS và chốt hóa đơn ngay lập tức?</p>
+                        <p className="text-xs text-slate-400 mt-0.5">Xe đang chờ tại trạm cân. Bạn có muốn duyệt kiểm nghiệm và chốt hóa đơn ngay lập tức?</p>
                       </div>
                       <Link
                         to={`/recycle/order-process?orderId=${selectedOrder.id}`}
                         className="bg-green-600 hover:bg-green-500 text-white font-bold text-xs px-4 py-2 rounded-xl transition-all shadow-md shrink-0 flex items-center gap-1.5"
                       >
                         <span className="material-symbols-outlined text-base">scale</span>
-                        Đi tới Trạm Cân KCS
+                        Đi tới Trạm Cân
                       </Link>
                     </div>
                   )}

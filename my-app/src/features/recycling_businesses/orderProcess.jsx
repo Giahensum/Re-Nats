@@ -146,10 +146,10 @@ const OrderProcess = () => {
                 measuredWeightKg: measuredInput,
                 impurityWeightKg: impurityInput,
                 pricePerKg: priceInput,
-                station: 'Trạm KCS Cổng Nam #04',
-                note: noteInput || 'Đã kiểm định hoàn tất KCS.',
+                station: 'Trạm Cân Cổng Nam #04',
+                note: noteInput || 'Đã kiểm định hoàn tất.',
             });
-            toast.success(`Cân xe ${activeTruck.plate} thành công! Đã chốt phiếu KCS & chuyển hóa đơn.`);
+            toast.success(`Cân xe ${activeTruck.plate} thành công! Đã chốt phiếu cân & chuyển hóa đơn.`);
             navigate(`/recycle/order-settlement?orderId=${activeTruck.id}`);
         } catch (err) {
             console.error('Error completing weighing:', err);
@@ -429,7 +429,7 @@ const OrderProcess = () => {
                                 <div className="flex flex-col space-y-6">
                                     <div className="bg-white rounded-3xl p-6 border border-slate-100 shadow-sm flex-grow flex flex-col justify-between items-center text-center">
                                         <div className="w-full">
-                                            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Kết quả kiểm định (KCS)</h3>
+                                            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Kết quả kiểm định</h3>
                                             <span className="inline-flex items-center px-3 py-1 bg-green-50 text-green-700 rounded-full border border-green-100/50 text-xs font-bold mb-4">
                                                 Đơn giá thỏa thuận: {pricePerKg.toLocaleString('vi-VN')} ₫/kg
                                             </span>
@@ -452,7 +452,7 @@ const OrderProcess = () => {
                                             )}
                                         </div>
 
-                                        {/* Ghi chú KCS */}
+                                        {/* Ghi chú kiểm định */}
                                         <div className="w-full px-2">
                                             <input
                                                 type="text"
@@ -484,7 +484,7 @@ const OrderProcess = () => {
                                             className="w-full bg-green-700 hover:bg-green-800 disabled:opacity-55 text-white text-base font-extrabold py-4 rounded-2xl shadow-lg shadow-green-100 flex items-center justify-center gap-2 transition-all hover:scale-[1.01] active:scale-95 cursor-pointer"
                                         >
                                             <IconCheck />
-                                            <span>{submitting ? 'ĐANG CHỐT PHIẾU CÂN...' : 'XÁC NHẬN KCS & XUẤT HÓA ĐƠN'}</span>
+                                            <span>{submitting ? 'ĐANG CHỐT PHIẾU CÂN...' : 'XÁC NHẬN CÂN & XUẤT HÓA ĐƠN'}</span>
                                         </button>
                                         <button
                                             onClick={handleRejectTruck}

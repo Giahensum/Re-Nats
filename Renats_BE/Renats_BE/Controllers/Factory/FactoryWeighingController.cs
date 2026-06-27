@@ -72,7 +72,7 @@ public class FactoryWeighingController : ControllerBase
             GrossWeightKg = dto.MeasuredWeightKg,
             TareWeightKg = dto.ImpurityWeightKg,
             NetWeightKg = netWeight,
-            WeighingStation = dto.Station ?? "KCS Station"
+            WeighingStation = dto.Station ?? "Trạm Cân"
         };
 
         var verification = new WeightVerification
@@ -112,14 +112,20 @@ public class FactoryWeighingController : ControllerBase
                 : Math.Max(0, depot.ReputationScore - 2);
         }
 
+        var subtotal = netWeight * order.AgreedPrice;
+        var vatAmount = Math.Round(subtotal * 0.08m, 2);
+        var commissionFee = Math.Round(subtotal * 0.03m, 2);
+        var totalAmount = Math.Round(subtotal * 1.08m + commissionFee, 2);
+
         // Tự động sinh hóa đơn (Invoice) dạng PENDING chờ chốt thanh toán
         var invoice = new Invoice
         {
             BatchOrderId = orderId,
             InvoiceNumber = $"HD-NMY-{DateTime.UtcNow:yyyyMMddHHmmss}",
-            Subtotal = netWeight * order.AgreedPrice,
-            VatAmount = Math.Round((netWeight * order.AgreedPrice) * 0.08m, 2), // 8% VAT
-            TotalAmount = Math.Round((netWeight * order.AgreedPrice) * 1.08m, 2),
+            Subtotal = subtotal,
+            VatAmount = vatAmount,
+            CommissionFee = commissionFee,
+            TotalAmount = totalAmount,
             Status = InvoiceStatus.PENDING,
             CreatedAt = DateTime.UtcNow
         };

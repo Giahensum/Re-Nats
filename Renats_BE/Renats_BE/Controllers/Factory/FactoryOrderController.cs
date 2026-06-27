@@ -218,7 +218,11 @@ public class FactoryOrderController : ControllerBase
                 materialType = o.Batch.MaterialType.ToString(),
                 depotName = o.Batch.Depot.CompanyName,
                 agreedPrice = o.AgreedPrice,
-                totalAmount = o.TotalAmount,
+                totalAmount = o.Invoice != null ? o.Invoice.TotalAmount : o.TotalAmount,
+                subtotal = o.Invoice != null ? o.Invoice.Subtotal : o.TotalAmount,
+                vatAmount = o.Invoice != null ? o.Invoice.VatAmount : 0,
+                commissionFee = o.Invoice != null ? o.Invoice.CommissionFee : 0,
+                netWeight = o.WeightTicket != null ? o.WeightTicket.NetWeightKg : 0,
                 status = o.Status.ToString(),
                 transportStatus = o.TransportJob != null ? o.TransportJob.Status.ToString() : null,
                 createdAt = o.CreatedAt
@@ -314,6 +318,7 @@ public class FactoryOrderController : ControllerBase
                 invoiceFileUrl = order.Invoice.InvoiceFileUrl,
                 subtotal = order.Invoice.Subtotal,
                 vatAmount = order.Invoice.VatAmount,
+                commissionFee = order.Invoice.CommissionFee,
                 totalAmount = order.Invoice.TotalAmount,
                 status = order.Invoice.Status.ToString(),
                 createdAt = order.Invoice.CreatedAt

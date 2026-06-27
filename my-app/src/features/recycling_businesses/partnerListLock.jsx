@@ -101,7 +101,7 @@ const PartnerList = () => {
                                             <th className="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider" scope="col">Tên Kho Vựa</th>
                                             <th className="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider" scope="col">Địa chỉ</th>
                                             <th className="px-6 py-4 text-center text-xs font-bold text-slate-500 uppercase tracking-wider" scope="col">Tổng giao dịch</th>
-                                            <th className="px-6 py-4 text-center text-xs font-bold text-slate-500 uppercase tracking-wider" scope="col">Điểm uy tín</th>
+                                            <th className="px-6 py-4 text-center text-xs font-bold text-slate-500 uppercase tracking-wider" scope="col">Phân hạng</th>
                                             <th className="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider" scope="col">Liên hệ</th>
                                             <th className="px-6 py-4 text-right text-xs font-bold text-slate-500 uppercase tracking-wider" scope="col">Hành động</th>
                                         </tr>
@@ -136,7 +136,7 @@ const PartnerList = () => {
                                                     <td className="px-6 py-4 whitespace-nowrap text-center">
                                                         {score != null ? (
                                                             <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-${scoreColor}-100 text-${scoreColor}-700 border border-${scoreColor}-200`}>
-                                                                {score}/100
+                                                                {score >= 90 ? 'Xuất sắc' : score >= 75 ? 'Đạt chuẩn' : 'Cần lưu ý'}
                                                             </span>
                                                         ) : (
                                                             <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-400">
