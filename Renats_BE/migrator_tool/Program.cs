@@ -1,26 +1,32 @@
 using Npgsql;
 var connStr = "Host=localhost;Port=5432;Database=Renats;Username=postgres;Password=123";
-var stmts = new[] {
-    "ALTER TABLE factories ADD COLUMN IF NOT EXISTS industrial_zone VARCHAR(255)",
-    "ALTER TABLE factories ADD COLUMN IF NOT EXISTS primary_material_type TEXT",
-    "ALTER TABLE factories ADD COLUMN IF NOT EXISTS accepted_material_types TEXT",
-    "ALTER TABLE factories ADD COLUMN IF NOT EXISTS capacity_per_month_ton NUMERIC(12,2)",
-    "ALTER TABLE factories ADD COLUMN IF NOT EXISTS min_purity_required NUMERIC(5,2)",
-    "ALTER TABLE factories ADD COLUMN IF NOT EXISTS business_license_url TEXT",
-    "ALTER TABLE factories ADD COLUMN IF NOT EXISTS environment_license_url TEXT",
-    "ALTER TABLE factories ADD COLUMN IF NOT EXISTS is_profile_complete BOOLEAN NOT NULL DEFAULT FALSE",
-    @"INSERT INTO ""__EFMigrationsHistory"" (""MigrationId"",""ProductVersion"") VALUES('20260606081651_AddFactoryProfileFields','8.0.0') ON CONFLICT(""MigrationId"") DO NOTHING",
-    @"INSERT INTO ""__EFMigrationsHistory"" (""MigrationId"",""ProductVersion"") VALUES('20260606081921_AddFactoryProfileFields','8.0.0') ON CONFLICT(""MigrationId"") DO NOTHING"
-};
 using var conn = new NpgsqlConnection(connStr);
 await conn.OpenAsync();
-foreach (var s in stmts) {
-    using var cmd = new NpgsqlCommand(s, conn);
-    try {
-        await cmd.ExecuteNonQueryAsync();
-        Console.WriteLine("OK: " + s[..Math.Min(70, s.Length)]);
-    } catch (Exception ex) {
-        Console.WriteLine("SKIP: " + ex.Message[..Math.Min(90, ex.Message.Length)]);
+
+Console.WriteLine("=== PICKUP RESULTS ===");
+using (var cmd = new NpgsqlCommand(
+    "SELECT pr.id, pr.pickup_request_id, pr.material_label, pr.weight_kg, r.status FROM pickup_results pr JOIN pickup_requests r ON pr.pickup_request_id = r.id",
+    conn))
+{
+    using (var reader = await cmd.ExecuteReaderAsync())
+    {
+        while (await reader.ReadAsync())
+        {
+            Console.WriteLine($"MaterialLabel: {reader["material_label"]}, Weight: {reader["weight_kg"]}, Status: {reader["status"]}");
+        }
     }
 }
-Console.WriteLine("=== Migration Done! ===");
+
+Console.WriteLine("\n=== FACTORIES ===");
+using (var cmd2 = new NpgsqlCommand(
+    "SELECT id, company_name, primary_material_type, accepted_material_types, is_profile_complete FROM factories",
+    conn))
+{
+    using (var reader2 = await cmd2.ExecuteReaderAsync())
+    {
+        while (await reader2.ReadAsync())
+        {
+            Console.WriteLine($"Name: {reader2["company_name"]}, Primary: {reader2["primary_material_type"]}, Accepted: {reader2["accepted_material_types"]}, Complete: {reader2["is_profile_complete"]}");
+        }
+    }
+}

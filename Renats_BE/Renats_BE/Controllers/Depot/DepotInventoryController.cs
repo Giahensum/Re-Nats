@@ -38,7 +38,7 @@ public class DepotInventoryController : ControllerBase
                     CompanyName = user.FullName ?? "Điểm thu gom Re-Nats",
                     ContactPerson = user.FullName ?? "Người đại diện",
                     ContactPhone = user.Phone ?? "0987654321",
-                    Address = "Hà Tĩnh",
+                    Address = null,
                     CreatedAt = DateTime.UtcNow
                 };
                 _db.Depots.Add(depot);
@@ -62,20 +62,17 @@ public class DepotInventoryController : ControllerBase
             })
             .ToListAsync();
 
-        // Tổng xuất theo loại (từ InventoryBatches đã DELIVERED)
-        // InventoryBatch dùng MaterialType enum không phải label string,
-        // nên chúng ta trả về thông tin batch theo label riêng
-        // Hiện tại: trả inbound – exported từ batches DELIVERED
+        // Tổng xuất theo loại (tất cả các lô hàng trừ các lô đã HỦY)
         var exportedBatches = await _db.InventoryBatches
             .Where(b => b.DepotId == depot.Id
-                     && (b.Status == BatchStatus.DELIVERED
-                      || b.Status == BatchStatus.VERIFIED))
+                     && b.Status != BatchStatus.CANCELLED)
             .Select(b => new
             {
                 MaterialType = b.MaterialType.ToString(),
                 WeightKg     = b.ActualWeightKg ?? b.EstimatedWeightKg,
             })
             .ToListAsync();
+
 
         // Map MaterialType → label (dùng tên đơn giản)
         static string TypeToLabel(string t) => t switch
@@ -84,10 +81,10 @@ public class DepotInventoryController : ControllerBase
             "STEEL"            => "Thép phế liệu",
             "COPPER"           => "Đồng cáp",
             "ALUMINUM"         => "Nhôm phế liệu",
-            "PAPER"            => "Giấy Carton",
             "CARDBOARD"        => "Giấy Carton",
-            "PET"              => "Nhựa cứng (PP/PE)",
-            "HDPE"             => "Nhựa cứng (PP/PE)",
+            "PAPER"            => "Giấy thải báo",
+            "PET"              => "Nhựa PET",
+            "HDPE"             => "Nhựa HDPE",
             "PVC"              => "Nhựa cứng (PP/PE)",
             "ELECTRONIC_WASTE" => "Pin / Acquy cũ",
             _                  => "Khác",
@@ -99,8 +96,11 @@ public class DepotInventoryController : ControllerBase
             "Thép phế liệu"    => "STEEL",
             "Đồng cáp"         => "COPPER",
             "Nhôm phế liệu"    => "ALUMINUM",
-            "Giấy Carton"      => "PAPER",
-            "Nhựa cứng (PP/PE)"=> "PET",
+            "Giấy Carton"      => "CARDBOARD",  // Giấy Carton → dùng CARDBOARD, không phải PAPER
+            "Giấy thải báo"    => "PAPER",
+            "Nhựa PET"         => "PET",
+            "Nhựa HDPE"        => "HDPE",
+            "Nhựa cứng (PP/PE)"=> "PVC",
             "Pin / Acquy cũ"   => "ELECTRONIC_WASTE",
             _                  => "OTHER",
         };

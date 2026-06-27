@@ -25,29 +25,8 @@ const MATERIAL_ICON = {
   RUBBER: '🛞', OIL: '🛢️', IRON: '⚙️', OTHER: '🏭',
 };
 
-// ── Mock factories khi API lỗi ─────────────────────────────────────────────────
-function getMockFactories(materialType) {
-  return [
-    {
-      id: 'mock-1', companyName: 'Nhà máy Tái Chế Minh Phát', province: 'TP. Hồ Chí Minh',
-      address: 'KCN Sóng Thần 2, Bình Dương', primaryMaterialType: materialType,
-      capacityPerMonthTon: 5000, minPurityRequired: 85, isPremium: true,
-      latitude: 10.8231, longitude: 106.6297, distanceKm: null,
-    },
-    {
-      id: 'mock-2', companyName: 'Công ty TNHH Tái Chế Xanh Việt', province: 'Bình Dương',
-      address: 'KCN VSIP II, Bình Dương', primaryMaterialType: materialType,
-      capacityPerMonthTon: 3000, minPurityRequired: 80, isPremium: false,
-      latitude: 10.9500, longitude: 106.7200, distanceKm: null,
-    },
-    {
-      id: 'mock-3', companyName: 'Tái Chế Đông Nam Á', province: 'Đồng Nai',
-      address: 'KCN Biên Hòa 2, Đồng Nai', primaryMaterialType: materialType,
-      capacityPerMonthTon: 8000, minPurityRequired: 90, isPremium: true,
-      latitude: 10.9460, longitude: 106.8120, distanceKm: null,
-    },
-  ];
-}
+
+
 
 // ── Simple Leaflet Map (dynamically loaded) ────────────────────────────────────
 function FactoryMap({ factories, selectedId, onSelect, depotLat, depotLng }) {
@@ -162,7 +141,7 @@ export default function FactoryPickerModal({ materialType, depotProfile, onSelec
       try {
         const { depotService } = await import('../../services/depotService');
         let data = await depotService.getMatchingFactories(materialType, depotLat, depotLng);
-        if (!data || data.length === 0) data = getMockFactories(materialType);
+        if (!data) data = [];
 
         // Tính khoảng cách phía client nếu BE chưa trả về
         const withDist = data.map(f => ({
@@ -176,13 +155,14 @@ export default function FactoryPickerModal({ materialType, depotProfile, onSelec
         withDist.sort((a, b) => (a.distanceKm ?? 9999) - (b.distanceKm ?? 9999));
         setFactories(withDist);
       } catch {
-        setFactories(getMockFactories(materialType));
+        setFactories([]);
       } finally {
         setLoading(false);
       }
     };
     load();
   }, [materialType]);
+
 
   const handleSelect = (f) => {
     setSelectedId(f.id);
@@ -248,22 +228,26 @@ export default function FactoryPickerModal({ materialType, depotProfile, onSelec
                   <p className="font-semibold">Chưa có nhà máy nào đăng ký loại vật liệu này</p>
                 </div>
               )}
-              {factories.map(f => {
+              {factories.map((f, idx) => {
                 const isSelected = f.id === selectedId;
+                const isNearest = idx === 0 && f.distanceKm != null;
                 return (
                   <button
                     key={f.id}
                     type="button"
                     onClick={() => handleSelect(f)}
-                    className={`w-full text-left p-4 rounded-2xl border-2 transition-all hover:shadow-md ${isSelected ? 'border-green-500 bg-green-50' : 'border-slate-200 hover:border-slate-300 bg-white'}`}
+                    className={`w-full text-left p-4 rounded-2xl border-2 transition-all hover:shadow-md ${isSelected ? 'border-green-500 bg-green-50' : isNearest ? 'border-green-300 bg-white' : 'border-slate-200 hover:border-slate-300 bg-white'}`}
                   >
                     <div className="flex items-start gap-3">
-                      <div className={`w-11 h-11 rounded-xl flex items-center justify-center text-xl shrink-0 ${isSelected ? 'bg-green-100' : 'bg-slate-100'}`}>
+                      <div className={`w-11 h-11 rounded-xl flex items-center justify-center text-xl shrink-0 ${isSelected ? 'bg-green-100' : isNearest ? 'bg-green-50' : 'bg-slate-100'}`}>
                         {MATERIAL_ICON[f.primaryMaterialType] || '🏭'}
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
                           <p className="font-bold text-slate-800 text-sm">{f.companyName}</p>
+                          {isNearest && (
+                            <span className="text-[10px] font-extrabold bg-green-600 text-white px-2 py-0.5 rounded-full">🥇 Gần nhất</span>
+                          )}
                           {f.isPremium && (
                             <span className="text-[10px] font-bold bg-yellow-400 text-yellow-900 px-2 py-0.5 rounded-full">⭐ PREMIUM</span>
                           )}
@@ -272,7 +256,7 @@ export default function FactoryPickerModal({ materialType, depotProfile, onSelec
                           )}
                         </div>
                         <p className="text-xs text-slate-500 mt-0.5">{f.address || f.province}</p>
-                        <div className="flex items-center gap-4 mt-2 flex-wrap">
+                        <div className="flex items-center gap-2 mt-2 flex-wrap">
                           <span className="text-xs text-slate-600 bg-slate-100 px-2.5 py-1 rounded-lg font-medium">
                             {MATERIAL_ICON[f.primaryMaterialType]} {MATERIAL_LABEL[f.primaryMaterialType] || f.primaryMaterialType}
                           </span>
@@ -280,12 +264,18 @@ export default function FactoryPickerModal({ materialType, depotProfile, onSelec
                             <span className="text-xs text-slate-500">🏋️ {f.capacityPerMonthTon.toLocaleString('vi-VN')} tấn/tháng</span>
                           )}
                           {f.minPurityRequired && (
-                            <span className="text-xs text-slate-500">🔬 Độ tinh khiết ≥ {f.minPurityRequired}%</span>
+                            <span className="text-xs text-slate-500">🔬 ≥ {f.minPurityRequired}%</span>
                           )}
-                          {f.distanceKm != null && (
-                            <span className={`text-xs font-bold px-2.5 py-1 rounded-lg ${f.distanceKm < 30 ? 'bg-green-100 text-green-700' : f.distanceKm < 100 ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-slate-600'}`}>
-                              📍 {f.distanceKm} km
+                          {f.distanceKm != null ? (
+                            <span className={`text-xs font-extrabold px-3 py-1 rounded-lg flex items-center gap-1 ${
+                              f.distanceKm < 30 ? 'bg-green-100 text-green-700 border border-green-200'
+                              : f.distanceKm < 100 ? 'bg-amber-100 text-amber-700 border border-amber-200'
+                              : 'bg-slate-100 text-slate-600 border border-slate-200'
+                            }`}>
+                              <span className="text-[11px]">📍</span> {f.distanceKm} km
                             </span>
+                          ) : (
+                            <span className="text-xs text-slate-400 italic">Chưa có tọa độ</span>
                           )}
                         </div>
                       </div>

@@ -22,16 +22,26 @@ public static class DbSeeder
         await db.Database.MigrateAsync();
 
         // Kiểm tra admin đã tồn tại chưa
-        if (await db.Users.AnyAsync(u => u.Email == AdminEmail))
+        var admin = await db.Users.FirstOrDefaultAsync(u => u.Email == AdminEmail);
+        if (admin != null)
         {
-            Console.WriteLine("✅ [Seeder] Tài khoản admin đã tồn tại, bỏ qua seed.");
+            if (!admin.PasswordHash.StartsWith("$2") || !BCrypt.Net.BCrypt.Verify(AdminPassword, admin.PasswordHash))
+            {
+                admin.PasswordHash = BCrypt.Net.BCrypt.HashPassword(AdminPassword);
+                await db.SaveChangesAsync();
+                Console.WriteLine("✅ [Seeder] Đã cập nhật/reset mật khẩu Admin sang BCrypt.");
+            }
+            else
+            {
+                Console.WriteLine("✅ [Seeder] Tài khoản admin đã tồn tại với mật khẩu BCrypt.");
+            }
             return;
         }
 
-        var admin = new User
+        var newAdmin = new User
         {
             Email        = AdminEmail,
-            PasswordHash = HashPassword(AdminPassword),
+            PasswordHash = BCrypt.Net.BCrypt.HashPassword(AdminPassword),
             FullName     = AdminFullName,
             Phone        = AdminPhone,
             Role         = UserRole.ADMIN,
@@ -40,19 +50,12 @@ public static class DbSeeder
             UpdatedAt    = DateTime.UtcNow,
         };
 
-        db.Users.Add(admin);
+        db.Users.Add(newAdmin);
         await db.SaveChangesAsync();
 
         Console.WriteLine("🌱 [Seeder] Đã tạo tài khoản admin thành công!");
         Console.WriteLine($"   📧 Email   : {AdminEmail}");
         Console.WriteLine($"   🔑 Password: {AdminPassword}");
         Console.WriteLine($"   👤 Tên     : {AdminFullName}");
-    }
-
-    private static string HashPassword(string password)
-    {
-        using var sha = SHA256.Create();
-        var bytes = sha.ComputeHash(Encoding.UTF8.GetBytes(password + "renats_salt_2025"));
-        return Convert.ToBase64String(bytes);
     }
 }

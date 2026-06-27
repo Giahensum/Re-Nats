@@ -17,14 +17,31 @@ async function request(path, options = {}) {
   });
 
   if (!res.ok) {
-    if (res.status === 401) {
+    const isAuthRequest = path.includes('/auth/login') ||
+                          path.includes('/auth/register') ||
+                          path.includes('/auth/google-login') ||
+                          path.includes('/auth/facebook-login');
+
+    if (res.status === 401 && !isAuthRequest) {
       // Token hết hạn hoặc không hợp lệ → xóa session và redirect về trang đăng nhập
       localStorage.removeItem('renats_token');
       localStorage.removeItem('renats_user');
       window.location.href = '/dang-nhap';
+      return;
     }
-    const err = await res.text();
-    throw new Error(err || `HTTP ${res.status}`);
+
+    const errText = await res.text();
+    let errorMessage = errText;
+    try {
+      const parsed = JSON.parse(errText);
+      if (parsed && parsed.message) {
+        errorMessage = parsed.message;
+      }
+    } catch {
+      // Ignore if not valid JSON or doesn't have a message
+    }
+
+    throw new Error(errorMessage || `HTTP ${res.status}`);
   }
 
   return res.json();

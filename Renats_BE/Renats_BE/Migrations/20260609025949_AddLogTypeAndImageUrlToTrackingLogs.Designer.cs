@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using Renats_BE.Data;
@@ -11,9 +12,11 @@ using Renats_BE.Data;
 namespace Renats_BE.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260609025949_AddLogTypeAndImageUrlToTrackingLogs")]
+    partial class AddLogTypeAndImageUrlToTrackingLogs
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -489,11 +492,6 @@ namespace Renats_BE.Migrations
                     b.Property<Guid>("BatchOrderId")
                         .HasColumnType("uuid")
                         .HasColumnName("batch_order_id");
-
-                    b.Property<decimal?>("CommissionFee")
-                        .HasPrecision(14, 2)
-                        .HasColumnType("numeric(14,2)")
-                        .HasColumnName("commission_fee");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp without time zone")

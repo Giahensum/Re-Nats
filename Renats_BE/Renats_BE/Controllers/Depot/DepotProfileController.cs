@@ -39,7 +39,7 @@ public class DepotProfileController : ControllerBase
                     CompanyName = user.FullName ?? "Điểm thu gom Re-Nats",
                     ContactPerson = user.FullName ?? "Người đại diện",
                     ContactPhone = user.Phone ?? "0987654321",
-                    Address = "Hà Tĩnh",
+                    Address = null,
                     CreatedAt = DateTime.UtcNow
                 };
                 _db.Depots.Add(depot);
@@ -91,7 +91,7 @@ public class DepotProfileController : ControllerBase
                     CompanyName = dto.CompanyName ?? user.FullName ?? "Điểm thu gom Re-Nats",
                     ContactPerson = dto.ContactPerson ?? user.FullName ?? "Người đại diện",
                     ContactPhone = dto.ContactPhone ?? user.Phone ?? "0987654321",
-                    Address = dto.Address ?? "Hà Tĩnh",
+                    Address = dto.Address,
                     CreatedAt = DateTime.UtcNow
                 };
                 _db.Depots.Add(depot);

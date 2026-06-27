@@ -39,7 +39,7 @@ public class DepotDashboardController : ControllerBase
                     CompanyName = user.FullName ?? "Điểm thu gom Re-Nats",
                     ContactPerson = user.FullName ?? "Người đại diện",
                     ContactPhone = user.Phone ?? "0987654321",
-                    Address = "Hà Tĩnh",
+                    Address = null,
                     CreatedAt = DateTime.UtcNow
                 };
                 _db.Depots.Add(depot);
@@ -156,7 +156,7 @@ public class DepotDashboardController : ControllerBase
                     CompanyName = user.FullName ?? "Điểm thu gom Re-Nats",
                     ContactPerson = user.FullName ?? "Người đại diện",
                     ContactPhone = user.Phone ?? "0987654321",
-                    Address = "Hà Tĩnh",
+                    Address = null,
                     CreatedAt = DateTime.UtcNow
                 };
                 _db.Depots.Add(depot);

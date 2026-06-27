@@ -58,8 +58,14 @@ public class DepotFactoryFinderController : ControllerBase
         if (!string.IsNullOrWhiteSpace(materialType)
             && Enum.TryParse<MaterialType>(materialType, true, out var mat))
         {
-            query = query.Where(f => f.PrimaryMaterialType == mat
-                || (f.AcceptedMaterialTypes != null && f.AcceptedMaterialTypes.Contains(materialType.ToUpper())));
+            // DB lưu tiếng Việt (ví dụ: "Giấy Carton"), nên so sánh theo tên tiếng Việt
+            var vnLabel = MaterialTypeHelper.ToVietnamese(mat);
+            query = query.Where(f =>
+                f.PrimaryMaterialType == mat                                              // khớp qua converter
+                || (f.AcceptedMaterialTypes != null && (
+                    f.AcceptedMaterialTypes.Contains(materialType.ToUpper())             // backward compat (CARDBOARD)
+                    || f.AcceptedMaterialTypes.Contains(vnLabel)))                        // tiếng Việt mới
+            );
         }
 
         var factories = await query

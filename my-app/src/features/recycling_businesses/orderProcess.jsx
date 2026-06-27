@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import HeaderDoanhNghiep from '../../components/layout/header_doanhNghiep/headerDoanhNghiep';
 import { factoryService } from '../../services/factoryService';
 import { useToast } from '../../context/ToastContext';
@@ -41,17 +41,36 @@ const IconCheck = () => (
     </svg>
 );
 
+const IconCash = () => (
+    <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5h16.5a1.5 1.5 0 011.5 1.5v12a1.5 1.5 0 01-1.5 1.5H3.75a1.5 1.5 0 01-1.5-1.5V6a1.5 1.5 0 011.5-1.5zm1.5 3h13.5M9 12.75h6M9 15.75h6" />
+    </svg>
+);
+
 const OrderProcess = () => {
     const navigate = useNavigate();
     const toast = useToast();
+    const [searchParams] = useSearchParams();
+    const targetOrderId = searchParams.get('orderId');
     const [timeStr, setTimeStr] = useState('09:42 AM');
     const [trucks, setTrucks] = useState([]);
     const [loading, setLoading] = useState(true);
     const [activeTruckIndex, setActiveTruckIndex] = useState(0);
 
+    // Auto-select truck index from URL search params if present
+    useEffect(() => {
+        if (targetOrderId && trucks.length > 0) {
+            const foundIndex = trucks.findIndex(t => t.id === targetOrderId);
+            if (foundIndex !== -1) {
+                setActiveTruckIndex(foundIndex);
+            }
+        }
+    }, [trucks, targetOrderId]);
+
     // Reactive input states synchronized to the active truck
     const [measuredInput, setMeasuredInput] = useState(0);
     const [impurityInput, setImpurityInput] = useState(0);
+    const [priceInput, setPriceInput] = useState(0);
     const [noteInput, setNoteInput] = useState('');
     const [submitting, setSubmitting] = useState(false);
 
@@ -92,63 +111,11 @@ const OrderProcess = () => {
                 }));
                 setTrucks(mapped);
             } else {
-                // Fallback to fully immersive mock queue for local testing
-                setTrucks([
-                    {
-                        id: '00000000-0000-0000-0000-000000000201',
-                        plate: '29H-123.45',
-                        driver: 'Nguyễn Văn Hùng',
-                        material: 'CARDBOARD',
-                        declaredWeight: 15400,
-                        unitPrice: 3200,
-                        measuredWeight: 15250,
-                        impurityWeight: 250,
-                        supplier: 'Vựa Phế Liệu Minh Khôi',
-                        status: 'ON_THE_WAY',
-                    },
-                    {
-                        id: '00000000-0000-0000-0000-000000000202',
-                        plate: '51C-998.12',
-                        driver: 'Trần Quốc Tuấn',
-                        material: 'HDPE',
-                        declaredWeight: 8400,
-                        unitPrice: 15000,
-                        measuredWeight: 8350,
-                        impurityWeight: 120,
-                        supplier: 'Đại Lý Thu Gom Thành Đạt',
-                        status: 'ON_THE_WAY',
-                    },
-                    {
-                        id: '00000000-0000-0000-0000-000000000203',
-                        plate: '60C-456.78',
-                        driver: 'Lê Minh Tâm',
-                        material: 'IRON',
-                        declaredWeight: 45000,
-                        unitPrice: 12000,
-                        measuredWeight: 44900,
-                        impurityWeight: 900,
-                        supplier: 'Công Ty Môi Trường Xanh',
-                        status: 'ON_THE_WAY',
-                    }
-                ]);
+                setTrucks([]);
             }
         } catch (err) {
             console.error('Error fetching weighing queue:', err);
-            // Fallback mock queue
-            setTrucks([
-                {
-                    id: '00000000-0000-0000-0000-000000000201',
-                    plate: '29H-123.45',
-                    driver: 'Nguyễn Văn Hùng',
-                    material: 'CARDBOARD',
-                    declaredWeight: 15400,
-                    unitPrice: 3200,
-                    measuredWeight: 15250,
-                    impurityWeight: 250,
-                    supplier: 'Vựa Phế Liệu Minh Khôi',
-                    status: 'ON_THE_WAY',
-                }
-            ]);
+            setTrucks([]);
         } finally {
             setLoading(false);
         }
@@ -165,6 +132,7 @@ const OrderProcess = () => {
         if (activeTruck) {
             setMeasuredInput(activeTruck.measuredWeight);
             setImpurityInput(activeTruck.impurityWeight);
+            setPriceInput(activeTruck.unitPrice);
             setNoteInput('');
         }
     }, [activeTruckIndex, trucks]);
@@ -177,12 +145,12 @@ const OrderProcess = () => {
             await factoryService.completeWeighing(activeTruck.id, {
                 measuredWeightKg: measuredInput,
                 impurityWeightKg: impurityInput,
-                station: 'Trạm KCS Cổng Nam #04',
-                note: noteInput || 'Đã kiểm định hoàn tất KCS.',
+                pricePerKg: priceInput,
+                station: 'Trạm Cân Cổng Nam #04',
+                note: noteInput || 'Đã kiểm định hoàn tất.',
             });
-            toast.success(`Cân xe ${activeTruck.plate} thành công! Đã chốt phiếu KCS & chuyển hóa đơn.`);
-            loadQueue();
-            setActiveTruckIndex(0);
+            toast.success(`Cân xe ${activeTruck.plate} thành công! Đã chốt phiếu cân & chuyển hóa đơn.`);
+            navigate(`/recycle/order-settlement?orderId=${activeTruck.id}`);
         } catch (err) {
             console.error('Error completing weighing:', err);
             toast.error('Giao dịch lỗi hoặc đã được hoàn tất trước đó!');
@@ -227,7 +195,7 @@ const OrderProcess = () => {
     const cleanWeight = Math.max(0, measuredInput - impurityInput);
     const impurityRate = measuredInput > 0 ? ((impurityInput / measuredInput) * 100) : 0;
     
-    const pricePerKg = activeTruck ? activeTruck.unitPrice : 0;
+    const pricePerKg = priceInput;
     const cleanValue = cleanWeight * pricePerKg;
     const deductionValue = impurityInput * pricePerKg;
     const isHighImpurity = impurityRate > 5.0;
@@ -427,13 +395,41 @@ const OrderProcess = () => {
                                             ))}
                                         </div>
                                     </div>
+
+                                    {/* Price Per Kg Card */}
+                                    <div className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm relative">
+                                        <label className="block text-[10px] font-bold text-green-700 uppercase tracking-widest mb-2 flex items-center gap-1">
+                                            <IconCash /> Đơn giá chốt thực tế (Price/kg)
+                                        </label>
+                                        <div className="relative">
+                                            <input
+                                                type="number"
+                                                value={priceInput || ''}
+                                                onChange={(e) => setPriceInput(Math.max(0, parseInt(e.target.value) || 0))}
+                                                className="w-full bg-slate-50 border border-green-200 focus:border-green-500 rounded-xl py-3.5 px-4 text-2xl font-black text-slate-800 focus:outline-none focus:ring-4 focus:ring-green-100 transition-all"
+                                            />
+                                            <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400">₫/KG</span>
+                                        </div>
+                                        <div className="grid grid-cols-3 gap-2 mt-3">
+                                            {[-100, 100, 500].map((val) => (
+                                                <button
+                                                    key={val}
+                                                    type="button"
+                                                    onClick={() => setPriceInput(Math.max(0, priceInput + val))}
+                                                    className="py-2 bg-slate-100 hover:bg-slate-200/80 text-slate-700 font-extrabold text-xs rounded-xl transition-all focus:outline-none cursor-pointer"
+                                                >
+                                                    {val > 0 ? `+${val}` : val}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
                                 </div>
 
                                 {/* Inspection Calculation Column */}
                                 <div className="flex flex-col space-y-6">
                                     <div className="bg-white rounded-3xl p-6 border border-slate-100 shadow-sm flex-grow flex flex-col justify-between items-center text-center">
                                         <div className="w-full">
-                                            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Kết quả kiểm định (KCS)</h3>
+                                            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Kết quả kiểm định</h3>
                                             <span className="inline-flex items-center px-3 py-1 bg-green-50 text-green-700 rounded-full border border-green-100/50 text-xs font-bold mb-4">
                                                 Đơn giá thỏa thuận: {pricePerKg.toLocaleString('vi-VN')} ₫/kg
                                             </span>
@@ -456,7 +452,7 @@ const OrderProcess = () => {
                                             )}
                                         </div>
 
-                                        {/* Ghi chú KCS */}
+                                        {/* Ghi chú kiểm định */}
                                         <div className="w-full px-2">
                                             <input
                                                 type="text"
@@ -488,7 +484,7 @@ const OrderProcess = () => {
                                             className="w-full bg-green-700 hover:bg-green-800 disabled:opacity-55 text-white text-base font-extrabold py-4 rounded-2xl shadow-lg shadow-green-100 flex items-center justify-center gap-2 transition-all hover:scale-[1.01] active:scale-95 cursor-pointer"
                                         >
                                             <IconCheck />
-                                            <span>{submitting ? 'ĐANG CHỐT PHIẾU CÂN...' : 'XÁC NHẬN KCS & XUẤT HÓA ĐƠN'}</span>
+                                            <span>{submitting ? 'ĐANG CHỐT PHIẾU CÂN...' : 'XÁC NHẬN CÂN & XUẤT HÓA ĐƠN'}</span>
                                         </button>
                                         <button
                                             onClick={handleRejectTruck}

@@ -60,7 +60,10 @@ export default function FactoryProfileSetup() {
   const [envFile, setEnvFile]         = useState(null);
   const [bizPreview, setBizPreview]   = useState(null);
   const [envPreview, setEnvPreview]   = useState(null);
-  const [uploading, setUploading]     = useState(false);
+  const [bizUrl, setBizUrl]           = useState('');
+  const [envUrl, setEnvUrl]           = useState('');
+  const [bizLoading, setBizLoading]   = useState(false);
+  const [envLoading, setEnvLoading]   = useState(false);
   const bizRef = useRef();
   const envRef = useRef();
 
@@ -77,27 +80,56 @@ export default function FactoryProfileSetup() {
     );
   };
 
-  const handleFileChange = (e, type) => {
-    const file = e.target.files[0];
+  const handleFileChange = async (e, type) => {
+    const targetFiles = e.target.files || (e.dataTransfer && e.dataTransfer.files);
+    const file = targetFiles ? targetFiles[0] : null;
     if (!file) return;
     if (file.size > 10 * 1024 * 1024) { toast.error('File vượt quá 10MB'); return; }
     const preview = file.type.startsWith('image/') ? URL.createObjectURL(file) : null;
-    if (type === 'biz') { setBizFile(file); setBizPreview(preview); }
-    else                { setEnvFile(file); setEnvPreview(preview); }
+    
+    if (type === 'biz') {
+      setBizFile(file);
+      setBizPreview(preview);
+      setBizLoading(true);
+      try {
+        const res = await factoryService.uploadTempDocument(file);
+        setBizUrl(res.url);
+        toast.success('Upload giấy phép kinh doanh thành công!');
+      } catch (err) {
+        toast.error('Lỗi upload giấy phép kinh doanh: ' + (err.message || err));
+        setBizFile(null);
+        setBizPreview(null);
+      } finally {
+        setBizLoading(false);
+      }
+    } else {
+      setEnvFile(file);
+      setEnvPreview(preview);
+      setEnvLoading(true);
+      try {
+        const res = await factoryService.uploadTempDocument(file);
+        setEnvUrl(res.url);
+        toast.success('Upload giấy phép môi trường thành công!');
+      } catch (err) {
+        toast.error('Lỗi upload giấy phép môi trường: ' + (err.message || err));
+        setEnvFile(null);
+        setEnvPreview(null);
+      } finally {
+        setEnvLoading(false);
+      }
+    }
   };
 
   const canGoNext = () => {
     if (step === 0) return form1.companyName.trim() && form1.province;
     if (step === 1) return !!primaryMaterial;
-    if (step === 2) return !!bizFile;
+    if (step === 2) return !!bizUrl && !bizLoading && !envLoading;
     return false;
   };
 
   const handleFinish = async () => {
     setSaving(true);
-    setUploading(true);
     try {
-      // 1. Update basic profile + material info
       const allMaterials = [primaryMaterial, ...acceptedMaterials.filter(m => m !== primaryMaterial)];
       await factoryService.updateProfile({
         ...form1,
@@ -107,17 +139,11 @@ export default function FactoryProfileSetup() {
         minPurityRequired:   minPurity  ? parseFloat(minPurity)  : null,
         latitude:  form1.latitude  ? parseFloat(form1.latitude)  : null,
         longitude: form1.longitude ? parseFloat(form1.longitude) : null,
+        businessLicenseUrl: bizUrl,
+        environmentLicenseUrl: envUrl,
       });
 
-      // 2. Upload business license (bắt buộc)
-      const bizResult = await factoryService.uploadDocument(bizFile, 'business_license');
-
-      // 3. Upload environment license (nếu có)
-      if (envFile) {
-        await factoryService.uploadDocument(envFile, 'environment_license');
-      }
-
-      // 4. Lấy profile mới nhất từ BE và lưu localStorage
+      // Lấy profile mới nhất từ BE và lưu localStorage
       const freshProfile = await factoryService.getProfile();
       saveFactoryProfile(freshProfile);
 
@@ -126,7 +152,6 @@ export default function FactoryProfileSetup() {
     } catch (err) {
       toast.error('Lỗi: ' + (err.message || 'Không thể lưu hồ sơ'));
       setSaving(false);
-      setUploading(false);
     }
   };
 
@@ -362,24 +387,33 @@ export default function FactoryProfileSetup() {
                 </label>
                 <div
                   className={`upload-zone rounded-2xl p-6 text-center cursor-pointer ${bizFile ? 'has-file' : ''}`}
-                  onClick={() => bizRef.current?.click()}
+                  onClick={() => !bizLoading && bizRef.current?.click()}
                   onDragOver={e => e.preventDefault()}
-                  onDrop={e => { e.preventDefault(); handleFileChange({ target: { files: e.dataTransfer.files } }, 'biz'); }}
+                  onDrop={e => { e.preventDefault(); !bizLoading && handleFileChange({ target: { files: e.dataTransfer.files } }, 'biz'); }}
                 >
                   <input ref={bizRef} type="file" accept=".jpg,.jpeg,.png,.webp,.pdf" className="hidden" onChange={e => handleFileChange(e, 'biz')} />
-                  {bizPreview
-                    ? <img src={bizPreview} alt="preview" className="h-32 mx-auto rounded-xl object-cover mb-2" />
-                    : bizFile
-                    ? <span className="material-symbols-outlined text-green-400 text-5xl">description</span>
-                    : <span className="material-symbols-outlined text-slate-500 text-5xl">upload_file</span>
-                  }
-                  <p className={`text-sm mt-2 font-medium ${bizFile ? 'text-green-400' : 'text-slate-400'}`}>
-                    {bizFile ? bizFile.name : 'Kéo thả hoặc click để chọn file'}
-                  </p>
-                  {!bizFile && <p className="text-xs text-slate-500 mt-1">JPG, PNG, WEBP hoặc PDF • Tối đa 10MB</p>}
+                  {bizLoading ? (
+                    <div className="flex flex-col items-center justify-center p-4">
+                      <span className="w-10 h-10 border-4 border-green-500 border-t-transparent rounded-full animate-spin" />
+                      <p className="text-green-400 text-sm mt-2 font-semibold animate-pulse">Đang tải lên cloud...</p>
+                    </div>
+                  ) : (
+                    <>
+                      {bizPreview
+                        ? <img src={bizPreview} alt="preview" className="h-32 mx-auto rounded-xl object-cover mb-2" />
+                        : bizFile
+                        ? <span className="material-symbols-outlined text-green-400 text-5xl">description</span>
+                        : <span className="material-symbols-outlined text-slate-500 text-5xl">upload_file</span>
+                      }
+                      <p className={`text-sm mt-2 font-medium ${bizFile ? 'text-green-400' : 'text-slate-400'}`}>
+                        {bizFile ? bizFile.name : 'Kéo thả hoặc click để chọn file'}
+                      </p>
+                      {!bizFile && <p className="text-xs text-slate-500 mt-1">JPG, PNG, WEBP hoặc PDF • Tối đa 10MB</p>}
+                    </>
+                  )}
                 </div>
               </div>
-
+ 
               {/* Environment License */}
               <div>
                 <label className="text-slate-300 text-sm font-semibold flex items-center gap-2 mb-3">
@@ -388,20 +422,29 @@ export default function FactoryProfileSetup() {
                 </label>
                 <div
                   className={`upload-zone rounded-2xl p-6 text-center cursor-pointer ${envFile ? 'has-file' : ''}`}
-                  onClick={() => envRef.current?.click()}
+                  onClick={() => !envLoading && envRef.current?.click()}
                   onDragOver={e => e.preventDefault()}
-                  onDrop={e => { e.preventDefault(); handleFileChange({ target: { files: e.dataTransfer.files } }, 'env'); }}
+                  onDrop={e => { e.preventDefault(); !envLoading && handleFileChange({ target: { files: e.dataTransfer.files } }, 'env'); }}
                 >
                   <input ref={envRef} type="file" accept=".jpg,.jpeg,.png,.webp,.pdf" className="hidden" onChange={e => handleFileChange(e, 'env')} />
-                  {envPreview
-                    ? <img src={envPreview} alt="preview" className="h-24 mx-auto rounded-xl object-cover mb-2" />
-                    : envFile
-                    ? <span className="material-symbols-outlined text-blue-400 text-4xl">description</span>
-                    : <span className="material-symbols-outlined text-slate-600 text-4xl">upload_file</span>
-                  }
-                  <p className={`text-sm mt-1.5 font-medium ${envFile ? 'text-blue-400' : 'text-slate-500'}`}>
-                    {envFile ? envFile.name : 'Kéo thả hoặc click để chọn file'}
-                  </p>
+                  {envLoading ? (
+                    <div className="flex flex-col items-center justify-center p-4">
+                      <span className="w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />
+                      <p className="text-blue-400 text-sm mt-2 font-semibold animate-pulse">Đang tải lên cloud...</p>
+                    </div>
+                  ) : (
+                    <>
+                      {envPreview
+                        ? <img src={envPreview} alt="preview" className="h-24 mx-auto rounded-xl object-cover mb-2" />
+                        : envFile
+                        ? <span className="material-symbols-outlined text-blue-400 text-4xl">description</span>
+                        : <span className="material-symbols-outlined text-slate-600 text-4xl">upload_file</span>
+                      }
+                      <p className={`text-sm mt-1.5 font-medium ${envFile ? 'text-blue-400' : 'text-slate-500'}`}>
+                        {envFile ? envFile.name : 'Kéo thả hoặc click để chọn file'}
+                      </p>
+                    </>
+                  )}
                 </div>
               </div>
 

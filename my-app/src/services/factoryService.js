@@ -67,6 +67,25 @@ export const factoryService = {
     return res.json();
   },
 
+  uploadTempDocument: async (file) => {
+    const token = localStorage.getItem('renats_token');
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const BASE_URL = import.meta.env.VITE_API_URL || 'https://localhost:7088/api';
+    const res = await fetch(`${BASE_URL}/factory/profile/upload-temp`, {
+      method: 'POST',
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+      body: formData,
+    });
+
+    if (!res.ok) {
+      const err = await res.text();
+      throw new Error(err || `HTTP ${res.status}`);
+    }
+    return res.json();
+  },
+
   // ── Market ──
   getBatches: (params = {}) => {
     // Tự động truyền materialType từ profile nhà máy
@@ -106,6 +125,9 @@ export const factoryService = {
 
   completeWeighing: (orderId, data) =>
     api.post(`/factory/weighing/${orderId}/complete`, data),
+
+  settleInvoice: (orderId) =>
+    api.post(`/factory/weighing/${orderId}/settle`),
 
   rejectTruck: (orderId, reason) =>
     api.post(`/factory/weighing/${orderId}/reject`, { reason }),

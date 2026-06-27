@@ -14,8 +14,31 @@ public class SellerRepository : ISellerRepository
     public async Task<Seller?> GetByIdAsync(Guid id) =>
         await _db.Sellers.Include(s => s.User).FirstOrDefaultAsync(s => s.Id == id);
 
-    public async Task<Seller?> GetByUserIdAsync(Guid userId) =>
-        await _db.Sellers.Include(s => s.User).FirstOrDefaultAsync(s => s.UserId == userId);
+    public async Task<Seller?> GetByUserIdAsync(Guid userId)
+    {
+        var seller = await _db.Sellers.Include(s => s.User).FirstOrDefaultAsync(s => s.UserId == userId);
+        if (seller is null)
+        {
+            var user = await _db.Users.FindAsync(userId);
+            if (user != null && user.Role == UserRole.SELLER)
+            {
+                seller = new Seller
+                {
+                    UserId = userId,
+                    DefaultAddress = user.Phone ?? "Địa chỉ mặc định",
+                    City = "Hồ Chí Minh",
+                    Province = "TP. Hồ Chí Minh",
+                    CreatedAt = DateTime.UtcNow
+                };
+                _db.Sellers.Add(seller);
+                await _db.SaveChangesAsync();
+
+                // Reload to populate the User navigation property
+                seller = await _db.Sellers.Include(s => s.User).FirstOrDefaultAsync(s => s.UserId == userId);
+            }
+        }
+        return seller;
+    }
 
     public async Task UpdateAsync(Seller seller)
     {

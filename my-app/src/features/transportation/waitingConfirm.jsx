@@ -92,7 +92,7 @@ const TransportationWaitingConfirm = () => {
                 {/* Bottom Navigation */}
                 <div className="bg-white border-t border-slate-200 px-2 pb-2 pt-2">
                     <div className="flex justify-between items-end relative">
-                        <Link to="/recycle/dashboard" className="flex-1 flex flex-col items-center justify-center py-2 text-slate-400 hover:text-primary transition-colors">
+                        <Link to="/transport/market" className="flex-1 flex flex-col items-center justify-center py-2 text-slate-400 hover:text-primary transition-colors">
                             <span className="material-symbols-outlined text-2xl mb-1">home</span>
                             <span className="text-[10px] font-medium">Trang chủ</span>
                         </Link>

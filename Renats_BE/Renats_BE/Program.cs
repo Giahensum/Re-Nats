@@ -8,6 +8,8 @@ using Renats_BE.Services;
 using Renats_BE.Services.Interfaces;
 using System.Text;
 
+AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
+
 var builder = WebApplication.CreateBuilder(args);
 
 // ── Database ──────────────────────────────────────────────────────────────────
@@ -24,7 +26,6 @@ builder.Services.AddScoped<IPickupRequestRepository, PickupRequestRepository>();
 builder.Services.AddScoped<ISellerService, SellerService>();
 builder.Services.AddScoped<IPickupRequestService, PickupRequestService>();
 builder.Services.AddScoped<ICloudinaryService, CloudinaryService>();
-
 
 // ── HttpClient (dùng cho xác thực token Social từ Google/Facebook) ──────────
 builder.Services.AddHttpClient();
@@ -55,15 +56,12 @@ builder.Services.AddAuthentication(options =>
 
 builder.Services.AddAuthorization();
 
-// ── CORS (allow React dev server on any localhost port) ──────────────────────
+// ── CORS (allow frontend to access API) ───────────────────────────────────────
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend", policy =>
     {
-        policy.SetIsOriginAllowed(origin =>
-                new Uri(origin).Host == "localhost" ||
-                new Uri(origin).Host == "127.0.0.1"
-              )
+        policy.AllowAnyOrigin()
               .AllowAnyHeader()
               .AllowAnyMethod();
     });
@@ -76,6 +74,7 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1", new() { Title = "Re-Nats API", Version = "v1" });
+    c.CustomSchemaIds(type => type.FullName?.Replace("+", "."));
 
     // Thêm hỗ trợ Authorization header trong Swagger UI
     c.AddSecurityDefinition("Bearer", new Microsoft.OpenApi.Models.OpenApiSecurityScheme
@@ -109,6 +108,7 @@ var app = builder.Build();
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    await db.Database.MigrateAsync();   // Automatically apply pending migrations to the database
     await DbSeeder.SeedAsync(db);       // Admin account
     await DataSeeder.SeedAsync(db);     // Seller + Factory + Depots + Batches
 }
@@ -129,4 +129,4 @@ app.UseAuthorization();
 
 app.MapControllers();
 
-app.Run();
+app.Run();

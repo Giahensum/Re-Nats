@@ -21,19 +21,9 @@ const PartnerList = () => {
                 setDepots(res.data || []);
             } catch (err) {
                 console.error('Error fetching partners:', err);
-                toast.error('Không thể tải danh sách đối tác. Đang hiển thị dữ liệu mô phỏng!');
-                // Fallback mock data
+                toast.error('Không thể tải danh sách đối tác từ máy chủ!');
                 setIsPremium(false);
-                setDepots([
-                    { id: '1', companyName: 'Vựa Phế Liệu Minh Khôi', city: 'Quận 9', province: 'TP. Hồ Chí Minh', totalTransactions: 48, reputationScore: null, contactPerson: null, isPremiumLocked: true },
-                    { id: '2', companyName: 'Đại Lý Thu Gom Thành Đạt', city: 'TP. Thủ Đức', province: 'TP. Hồ Chí Minh', totalTransactions: 29, reputationScore: null, contactPerson: null, isPremiumLocked: true },
-                    { id: '3', companyName: 'Công Ty Môi Trường Xanh', city: 'Bình Thạnh', province: 'TP. Hồ Chí Minh', totalTransactions: 63, reputationScore: null, contactPerson: null, isPremiumLocked: true },
-                    { id: '4', companyName: 'An Khang Recycling', city: 'Biên Hòa', province: 'Đồng Nai', totalTransactions: 112, reputationScore: null, contactPerson: null, isPremiumLocked: true },
-                    { id: '5', companyName: 'Phú Mỹ Xanh', city: 'Mỹ Tho', province: 'Tiền Giang', totalTransactions: 77, reputationScore: null, contactPerson: null, isPremiumLocked: true },
-                    { id: '6', companyName: 'Tân Tiến Steel', city: 'Đà Nẵng', province: 'Đà Nẵng', totalTransactions: 201, reputationScore: null, contactPerson: null, isPremiumLocked: true },
-                    { id: '7', companyName: 'Hoàng Gia Metal', city: 'Vũng Tàu', province: 'Bà Rịa - Vũng Tàu', totalTransactions: 58, reputationScore: null, contactPerson: null, isPremiumLocked: true },
-                    { id: '8', companyName: 'Minh Long Plastic', city: 'Tân An', province: 'Long An', totalTransactions: 34, reputationScore: null, contactPerson: null, isPremiumLocked: true },
-                ]);
+                setDepots([]);
             } finally {
                 setLoading(false);
             }
@@ -111,7 +101,7 @@ const PartnerList = () => {
                                             <th className="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider" scope="col">Tên Kho Vựa</th>
                                             <th className="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider" scope="col">Địa chỉ</th>
                                             <th className="px-6 py-4 text-center text-xs font-bold text-slate-500 uppercase tracking-wider" scope="col">Tổng giao dịch</th>
-                                            <th className="px-6 py-4 text-center text-xs font-bold text-slate-500 uppercase tracking-wider" scope="col">Điểm uy tín</th>
+                                            <th className="px-6 py-4 text-center text-xs font-bold text-slate-500 uppercase tracking-wider" scope="col">Phân hạng</th>
                                             <th className="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider" scope="col">Liên hệ</th>
                                             <th className="px-6 py-4 text-right text-xs font-bold text-slate-500 uppercase tracking-wider" scope="col">Hành động</th>
                                         </tr>
@@ -146,7 +136,7 @@ const PartnerList = () => {
                                                     <td className="px-6 py-4 whitespace-nowrap text-center">
                                                         {score != null ? (
                                                             <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-${scoreColor}-100 text-${scoreColor}-700 border border-${scoreColor}-200`}>
-                                                                {score}/100
+                                                                {score >= 90 ? 'Xuất sắc' : score >= 75 ? 'Đạt chuẩn' : 'Cần lưu ý'}
                                                             </span>
                                                         ) : (
                                                             <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-400">

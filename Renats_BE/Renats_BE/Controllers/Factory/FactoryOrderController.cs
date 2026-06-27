@@ -62,13 +62,12 @@ public class FactoryOrderController : ControllerBase
         _db.BatchOrders.Add(order);
         await _db.SaveChangesAsync();
 
-        // 4. Tạo TransportJob tự động gán tài xế để chạy simulator
-        var driver = await _db.Drivers.FirstOrDefaultAsync();
+        // 4. Tạo TransportJob để đưa lên chợ đơn
         var transport = new TransportJob
         {
             Id = Guid.NewGuid(),
             BatchOrderId = order.Id,
-            DriverId = driver?.Id ?? Guid.Parse("44444444-0000-0000-0000-000000000001"),
+            DriverId = null,
             PickupAddress = "Điểm tập kết phế liệu Quận 9, TP.HCM",
             DeliveryAddress = batch.Depot?.Address ?? "Kho trung chuyển Re-Nats",
             PickupLatitude = 10.7876m,
@@ -77,10 +76,36 @@ public class FactoryOrderController : ControllerBase
             DeliveryLongitude = batch.Depot?.Longitude ?? 106.6297m,
             EstimatedDistanceKm = 15.2m,
             TransportFee = 250000m,
-            Status = TransportStatus.ASSIGNED,
+            Status = TransportStatus.PENDING,
             CreatedAt = DateTime.UtcNow
         };
         _db.TransportJobs.Add(transport);
+
+        // Tự động sinh nhật ký EPR Phân đoạn 1 & 2 (Thu gom tại Điểm tập kết nguồn - Shopee)
+        var shopeeCheckin = new TransportTrackingLog
+        {
+            Id = Guid.NewGuid(),
+            TransportJobId = transport.Id,
+            Latitude = 10.7876m,
+            Longitude = 106.6346m,
+            LogType = "checkin_shopee",
+            Note = "[Check-in Nguồn] Tài xế check-in cổng Điểm tập kết phế liệu",
+            ImageUrl = "https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?auto=format&fit=crop&w=400&q=80",
+            CreatedAt = DateTime.UtcNow.AddMinutes(-120)
+        };
+        var shopeeCheckout = new TransportTrackingLog
+        {
+            Id = Guid.NewGuid(),
+            TransportJobId = transport.Id,
+            Latitude = 10.7876m,
+            Longitude = 106.6346m,
+            LogType = "checkout_shopee",
+            Note = "[Check-out Nguồn] Xác thực hồ sơ thu gom thành công",
+            ImageUrl = "https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?auto=format&fit=crop&w=400&q=80",
+            CreatedAt = DateTime.UtcNow.AddMinutes(-60)
+        };
+        _db.TransportTrackingLogs.AddRange(shopeeCheckin, shopeeCheckout);
+
         await _db.SaveChangesAsync();
 
         return CreatedAtAction(nameof(GetOrderDetail), new { id = order.Id }, new { orderId = order.Id });
@@ -91,7 +116,7 @@ public class FactoryOrderController : ControllerBase
     public async Task<IActionResult> ConfirmOrder([FromBody] ConfirmOrderDto dto)
     {
         var bid = await _db.BatchBids
-            .Include(b => b.Batch)
+            .Include(b => b.Batch).ThenInclude(b => b.Depot)
             .FirstOrDefaultAsync(b => b.Id == dto.BidId);
 
         if (bid is null) return NotFound("Bid not found");
@@ -105,17 +130,66 @@ public class FactoryOrderController : ControllerBase
 
         var order = new BatchOrder
         {
+            Id = Guid.NewGuid(),
             BatchId = bid.BatchId,
             FactoryId = bid.FactoryId,
             AcceptedBidId = bid.Id,
             AgreedPrice = bid.BidPrice,
-            Status = BatchStatus.ACCEPTED
+            TotalAmount = bid.Batch.EstimatedWeightKg * bid.BidPrice,
+            Status = BatchStatus.ACCEPTED,
+            CreatedAt = DateTime.UtcNow
         };
 
         bid.Batch.Status = BatchStatus.ACCEPTED;
         bid.Batch.AcceptedAt = DateTime.UtcNow;
 
         _db.BatchOrders.Add(order);
+        await _db.SaveChangesAsync();
+
+        // Tạo TransportJob để đưa lên chợ đơn
+        var transport = new TransportJob
+        {
+            Id = Guid.NewGuid(),
+            BatchOrderId = order.Id,
+            DriverId = null,
+            PickupAddress = "Điểm tập kết phế liệu Quận 9, TP.HCM",
+            DeliveryAddress = bid.Batch.Depot?.Address ?? "Kho trung chuyển Re-Nats",
+            PickupLatitude = 10.7876m,
+            PickupLongitude = 106.6346m,
+            DeliveryLatitude = bid.Batch.Depot?.Latitude ?? 10.8231m,
+            DeliveryLongitude = bid.Batch.Depot?.Longitude ?? 106.6297m,
+            EstimatedDistanceKm = 15.2m,
+            TransportFee = 250000m,
+            Status = TransportStatus.PENDING,
+            CreatedAt = DateTime.UtcNow
+        };
+        _db.TransportJobs.Add(transport);
+
+        // Tự động sinh nhật ký EPR Phân đoạn 1 & 2 (Thu gom tại Điểm tập kết nguồn - Shopee)
+        var shopeeCheckin = new TransportTrackingLog
+        {
+            Id = Guid.NewGuid(),
+            TransportJobId = transport.Id,
+            Latitude = 10.7876m,
+            Longitude = 106.6346m,
+            LogType = "checkin_shopee",
+            Note = "[Check-in Nguồn] Tài xế check-in cổng Điểm tập kết phế liệu",
+            ImageUrl = "https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?auto=format&fit=crop&w=400&q=80",
+            CreatedAt = DateTime.UtcNow.AddMinutes(-120)
+        };
+        var shopeeCheckout = new TransportTrackingLog
+        {
+            Id = Guid.NewGuid(),
+            TransportJobId = transport.Id,
+            Latitude = 10.7876m,
+            Longitude = 106.6346m,
+            LogType = "checkout_shopee",
+            Note = "[Check-out Nguồn] Xác thực hồ sơ thu gom thành công",
+            ImageUrl = "https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?auto=format&fit=crop&w=400&q=80",
+            CreatedAt = DateTime.UtcNow.AddMinutes(-60)
+        };
+        _db.TransportTrackingLogs.AddRange(shopeeCheckin, shopeeCheckout);
+
         await _db.SaveChangesAsync();
 
         return CreatedAtAction(nameof(GetOrderDetail), new { id = order.Id }, new { orderId = order.Id });
@@ -144,7 +218,11 @@ public class FactoryOrderController : ControllerBase
                 materialType = o.Batch.MaterialType.ToString(),
                 depotName = o.Batch.Depot.CompanyName,
                 agreedPrice = o.AgreedPrice,
-                totalAmount = o.TotalAmount,
+                totalAmount = o.Invoice != null ? o.Invoice.TotalAmount : o.TotalAmount,
+                subtotal = o.Invoice != null ? o.Invoice.Subtotal : o.TotalAmount,
+                vatAmount = o.Invoice != null ? o.Invoice.VatAmount : 0,
+                commissionFee = o.Invoice != null ? o.Invoice.CommissionFee : 0,
+                netWeight = o.WeightTicket != null ? o.WeightTicket.NetWeightKg : 0,
                 status = o.Status.ToString(),
                 transportStatus = o.TransportJob != null ? o.TransportJob.Status.ToString() : null,
                 createdAt = o.CreatedAt
@@ -213,6 +291,8 @@ public class FactoryOrderController : ControllerBase
                         latitude = l.Latitude,
                         longitude = l.Longitude,
                         note = l.Note,
+                        logType = l.LogType,
+                        imageUrl = l.ImageUrl,
                         createdAt = l.CreatedAt
                     }).ToList()
             },
@@ -230,6 +310,18 @@ public class FactoryOrderController : ControllerBase
                 differenceKg = order.WeightVerification.DifferenceKg,
                 differencePercentage = order.WeightVerification.DifferencePercentage,
                 isVerified = order.WeightVerification.IsVerified
+            },
+            invoice = order.Invoice is null ? null : new
+            {
+                id = order.Invoice.Id,
+                invoiceNumber = order.Invoice.InvoiceNumber,
+                invoiceFileUrl = order.Invoice.InvoiceFileUrl,
+                subtotal = order.Invoice.Subtotal,
+                vatAmount = order.Invoice.VatAmount,
+                commissionFee = order.Invoice.CommissionFee,
+                totalAmount = order.Invoice.TotalAmount,
+                status = order.Invoice.Status.ToString(),
+                createdAt = order.Invoice.CreatedAt
             }
         });
     }
@@ -269,6 +361,16 @@ public class FactoryOrderController : ControllerBase
             Latitude = dto.Latitude,
             Longitude = dto.Longitude,
             Note = dto.Note,
+            LogType = dto.Step,
+            ImageUrl = dto.Step switch
+            {
+                "checkin_shopee" => "https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?auto=format&fit=crop&w=400&q=80",
+                "checkout_shopee" => "https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?auto=format&fit=crop&w=400&q=80",
+                "checkin_depot" => "https://images.unsplash.com/photo-1553413077-190dd305871c?auto=format&fit=crop&w=400&q=80",
+                "checkout_depot" => "https://images.unsplash.com/photo-1565793298595-6a879b1d9492?auto=format&fit=crop&w=400&q=80",
+                "checkin_factory" => "https://images.unsplash.com/photo-1527018601619-a508a2be00cd?auto=format&fit=crop&w=400&q=80",
+                _ => null
+            },
             CreatedAt = DateTime.UtcNow
         };
         _db.TransportTrackingLogs.Add(log);

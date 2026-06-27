@@ -21,7 +21,8 @@ public class FactoryWeighingController : ControllerBase
     {
         var queue = await _db.TransportJobs
             .Where(t => t.BatchOrder.FactoryId == factoryId &&
-                        (t.Status == TransportStatus.PICKED_UP || t.Status == TransportStatus.ON_THE_WAY))
+                        (t.Status == TransportStatus.PICKED_UP || t.Status == TransportStatus.ON_THE_WAY || t.Status == TransportStatus.DELIVERED) &&
+                        (t.BatchOrder.Status == BatchStatus.IN_PROGRESS || t.BatchOrder.Status == BatchStatus.DELIVERED))
             .Include(t => t.Driver)
             .Include(t => t.BatchOrder).ThenInclude(o => o.Batch).ThenInclude(b => b.Depot)
             .OrderBy(t => t.PickupTime)
@@ -35,6 +36,7 @@ public class FactoryWeighingController : ControllerBase
                 materialType = t.BatchOrder.Batch.MaterialType.ToString(),
                 depotName = t.BatchOrder.Batch.Depot.CompanyName,
                 estimatedWeightKg = t.BatchOrder.Batch.EstimatedWeightKg,
+                agreedPrice = t.BatchOrder.AgreedPrice,
                 pickupTime = t.PickupTime
             })
             .ToListAsync();
@@ -70,7 +72,7 @@ public class FactoryWeighingController : ControllerBase
             GrossWeightKg = dto.MeasuredWeightKg,
             TareWeightKg = dto.ImpurityWeightKg,
             NetWeightKg = netWeight,
-            WeighingStation = dto.Station ?? "KCS Station"
+            WeighingStation = dto.Station ?? "Trạm Cân"
         };
 
         var verification = new WeightVerification
@@ -83,6 +85,11 @@ public class FactoryWeighingController : ControllerBase
             IsVerified = true,
             VerificationNote = dto.Note
         };
+
+        if (dto.PricePerKg.HasValue && dto.PricePerKg.Value > 0)
+        {
+            order.AgreedPrice = dto.PricePerKg.Value;
+        }
 
         order.Batch.ActualWeightKg = netWeight;
         order.Batch.UpdatedAt = DateTime.UtcNow;
@@ -105,16 +112,74 @@ public class FactoryWeighingController : ControllerBase
                 : Math.Max(0, depot.ReputationScore - 2);
         }
 
+        var subtotal = netWeight * order.AgreedPrice;
+        var vatAmount = Math.Round(subtotal * 0.08m, 2);
+        var commissionFee = Math.Round(subtotal * 0.03m, 2);
+        var totalAmount = Math.Round(subtotal * 1.08m + commissionFee, 2);
+
+        // Tự động sinh hóa đơn (Invoice) dạng PENDING chờ chốt thanh toán
+        var invoice = new Invoice
+        {
+            BatchOrderId = orderId,
+            InvoiceNumber = $"HD-NMY-{DateTime.UtcNow:yyyyMMddHHmmss}",
+            Subtotal = subtotal,
+            VatAmount = vatAmount,
+            CommissionFee = commissionFee,
+            TotalAmount = totalAmount,
+            Status = InvoiceStatus.PENDING,
+            CreatedAt = DateTime.UtcNow
+        };
+
         _db.WeightTickets.Add(ticket);
         _db.WeightVerifications.Add(verification);
+        _db.Invoices.Add(invoice);
+        
         await _db.SaveChangesAsync();
 
         return Ok(new { ticketId = ticket.Id, netWeightKg = netWeight, impurityRate = diffPct, totalAmount = order.TotalAmount });
     }
 
+    // POST /api/factory/weighing/{orderId}/settle
+    [HttpPost("{orderId}/settle")]
+    public async Task<IActionResult> SettleInvoice(Guid orderId)
+    {
+        var order = await _db.BatchOrders
+            .Include(o => o.Invoice)
+            .Include(o => o.Batch).ThenInclude(b => b.Depot)
+            .FirstOrDefaultAsync(o => o.Id == orderId);
+
+        if (order is null) return NotFound("Order not found");
+        if (order.Invoice is null) return BadRequest("Invoice not found or KCS not completed");
+
+        order.Invoice.Status = InvoiceStatus.VERIFIED;
+        order.Invoice.CreatedAt = DateTime.UtcNow;
+
+        // Cũng cập nhật trạng thái đơn hàng thành VERIFIED để chốt toàn bộ
+        order.Status = BatchStatus.VERIFIED;
+        order.Batch.Status = BatchStatus.VERIFIED;
+
+        var depotUser = await _db.Users.FirstOrDefaultAsync(u => u.Id == order.Batch.Depot.UserId);
+        if (depotUser != null)
+        {
+            var notification = new Notification
+            {
+                UserId = depotUser.Id,
+                Title = "Hóa đơn đã được thanh toán",
+                Message = $"Nhà máy đã thanh toán thành công hóa đơn {order.Invoice.InvoiceNumber} cho lô hàng {order.Batch.BatchCode}!",
+                IsRead = false,
+                CreatedAt = DateTime.UtcNow
+            };
+            _db.Notifications.Add(notification);
+        }
+
+        await _db.SaveChangesAsync();
+
+        return Ok(new { success = true, invoiceStatus = order.Invoice.Status.ToString() });
+    }
+
     // POST /api/factory/weighing/{orderId}/reject
     [HttpPost("{orderId}/reject")]
-    public async Task<IActionResult> RejectTruck(Guid orderId, [FromBody] RejectDto dto)
+    public async Task<IActionResult> RejectTruck(Guid orderId, [FromBody] FactoryWeighingRejectDto dto)
     {
         var order = await _db.BatchOrders
             .Include(o => o.TransportJob)
@@ -139,7 +204,8 @@ public class FactoryWeighingController : ControllerBase
         public decimal ImpurityWeightKg { get; set; }
         public string? Station { get; set; }
         public string? Note { get; set; }
+        public decimal? PricePerKg { get; set; }
     }
 
-    public class RejectDto { public string? Reason { get; set; } }
+    public class FactoryWeighingRejectDto { public string? Reason { get; set; } }
 }

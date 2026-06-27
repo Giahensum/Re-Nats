@@ -1,9 +1,67 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import HeaderDoanhNghiep from '../../components/layout/header_doanhNghiep/headerDoanhNghiep';
+import { factoryService } from '../../services/factoryService';
 
 const EprReport = () => {
     const navigate = useNavigate();
+    const [orders, setOrders] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [searchQuery, setSearchQuery] = useState('');
+    const [selectedMonth, setSelectedMonth] = useState('ALL');
+    const [selectedMaterial, setSelectedMaterial] = useState('ALL');
+    const [selectedDepot, setSelectedDepot] = useState('ALL');
+
+    useEffect(() => {
+        setLoading(true);
+        Promise.all([
+            factoryService.getOrders('VERIFIED'),
+            factoryService.getOrders('COMPLETED')
+        ]).then(([verified, completed]) => {
+            const list = [...(verified || []), ...(completed || [])];
+            list.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+            setOrders(list);
+            setLoading(false);
+        }).catch(err => {
+            console.error('Error fetching EPR orders:', err);
+            setLoading(false);
+        });
+    }, []);
+
+    // Filter logic
+    const getFilteredOrders = () => {
+        return orders.filter(o => {
+            if (searchQuery) {
+                const q = searchQuery.toLowerCase();
+                const matchesId = o.id.toLowerCase().includes(q);
+                const matchesBatch = o.batchCode?.toLowerCase().includes(q);
+                if (!matchesId && !matchesBatch) return false;
+            }
+            if (selectedMonth !== 'ALL') {
+                const monthYear = new Date(o.createdAt).toLocaleString('vi-VN', { month: '2-digit', year: 'numeric' });
+                if (monthYear !== selectedMonth) return false;
+            }
+            if (selectedMaterial !== 'ALL') {
+                if (o.materialType !== selectedMaterial) return false;
+            }
+            if (selectedDepot !== 'ALL') {
+                if (o.depotName !== selectedDepot) return false;
+            }
+            return true;
+        });
+    };
+
+    const filteredOrders = getFilteredOrders();
+
+    // Unique options for dropdowns
+    const uniqueMonths = [...new Set(orders.map(o => new Date(o.createdAt).toLocaleString('vi-VN', { month: '2-digit', year: 'numeric' })))];
+    const uniqueMaterials = [...new Set(orders.map(o => o.materialType))];
+    const uniqueDepots = [...new Set(orders.map(o => o.depotName))];
+
+    // Compute stats
+    const totalWeightKg = filteredOrders.reduce((sum, o) => sum + (o.netWeight || 0), 0);
+    const totalAmountVnd = filteredOrders.reduce((sum, o) => sum + (o.subtotal || 0), 0);
+
     return (
         <div className="font-sans text-slate-900 overflow-x-hidden bg-slate-50">
             <style>{`
@@ -17,7 +75,7 @@ const EprReport = () => {
         }
       `}</style>
 
-            {/* Redesigned Premium Unified Header */}
+            {/* Redesigned Unified Header */}
             <HeaderDoanhNghiep activeTab="report" />
 
             {/* Main */}
@@ -61,7 +119,7 @@ const EprReport = () => {
                             </div>
                             <div>
                                 <p className="text-sm font-medium text-slate-500">Tổng khối lượng sạch</p>
-                                <p className="text-2xl font-bold text-slate-900">48,250 <span className="text-sm font-normal text-slate-500">kg</span></p>
+                                <p className="text-2xl font-bold text-slate-900">{totalWeightKg.toLocaleString('vi-VN')} <span className="text-sm font-normal text-slate-500">kg</span></p>
                             </div>
                         </div>
                         <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-6 flex items-center">
@@ -69,8 +127,8 @@ const EprReport = () => {
                                 <span className="material-symbols-outlined text-3xl">recycling</span>
                             </div>
                             <div>
-                                <p className="text-sm font-medium text-slate-500">Tỷ lệ tái chế</p>
-                                <p className="text-2xl font-bold text-slate-900">94.5 <span className="text-sm font-normal text-slate-500">%</span></p>
+                                <p className="text-sm font-medium text-slate-500">Tỷ lệ đạt chuẩn EPR</p>
+                                <p className="text-2xl font-bold text-slate-900">100 <span className="text-sm font-normal text-slate-500">%</span></p>
                             </div>
                         </div>
                         <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-6 flex items-center">
@@ -79,7 +137,7 @@ const EprReport = () => {
                             </div>
                             <div>
                                 <p className="text-sm font-medium text-slate-500">Tổng giá trị thu mua</p>
-                                <p className="text-2xl font-bold text-slate-900">1.2 <span className="text-sm font-normal text-slate-500">Tỷ VNĐ</span></p>
+                                <p className="text-2xl font-bold text-slate-900">{(totalAmountVnd / 1000000).toLocaleString('vi-VN', { maximumFractionDigits: 2 })} <span className="text-sm font-normal text-slate-500">Tr VNĐ</span></p>
                             </div>
                         </div>
                     </div>
@@ -97,34 +155,45 @@ const EprReport = () => {
                                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                         <span className="material-symbols-outlined text-slate-400 text-sm">calendar_month</span>
                                     </div>
-                                    <select className="pl-9 pr-8 py-2 border border-slate-300 rounded-lg text-sm bg-white focus:ring-primary focus:border-primary block w-full">
-                                        <option>Tháng 5, 2024</option>
-                                        <option>Tháng 4, 2024</option>
-                                        <option>Tháng 3, 2024</option>
+                                    <select
+                                        value={selectedMonth}
+                                        onChange={e => setSelectedMonth(e.target.value)}
+                                        className="pl-9 pr-8 py-2 border border-slate-300 rounded-lg text-sm bg-white focus:ring-primary focus:border-primary block w-full"
+                                    >
+                                        <option value="ALL">Tất cả các tháng</option>
+                                        {uniqueMonths.map(m => (
+                                            <option key={m} value={m}>{`Tháng ${m}`}</option>
+                                        ))}
                                     </select>
                                 </div>
                                 <div className="relative w-full sm:w-auto min-w-[180px]">
                                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                         <span className="material-symbols-outlined text-slate-400 text-sm">category</span>
                                     </div>
-                                    <select className="pl-9 pr-8 py-2 border border-slate-300 rounded-lg text-sm bg-white focus:ring-primary focus:border-primary block w-full">
-                                        <option>Tất cả loại liệu</option>
-                                        <option>Nhựa HDPE</option>
-                                        <option>Nhựa PET</option>
-                                        <option>Giấy Carton</option>
-                                        <option>Nhôm</option>
+                                    <select
+                                        value={selectedMaterial}
+                                        onChange={e => setSelectedMaterial(e.target.value)}
+                                        className="pl-9 pr-8 py-2 border border-slate-300 rounded-lg text-sm bg-white focus:ring-primary focus:border-primary block w-full"
+                                    >
+                                        <option value="ALL">Tất cả loại liệu</option>
+                                        {uniqueMaterials.map(m => (
+                                            <option key={m} value={m}>{m}</option>
+                                        ))}
                                     </select>
                                 </div>
                                 <div className="relative w-full sm:w-auto min-w-[200px]">
                                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                         <span className="material-symbols-outlined text-slate-400 text-sm">storefront</span>
                                     </div>
-                                    <select className="pl-9 pr-8 py-2 border border-slate-300 rounded-lg text-sm bg-white focus:ring-primary focus:border-primary block w-full">
-                                        <option value="">Lọc theo Tên Vựa/Agency</option>
-                                        <option value="vua-minh-tam">Vựa Phế Liệu Minh Tâm</option>
-                                        <option value="htx-moi-truong-xanh">HTX Môi Trường Xanh</option>
-                                        <option value="vua-minh-khoi">Vựa Minh Khôi</option>
-                                        <option value="dai-ly-thanh-dat">Đại Lý Thu Gom Thành Đạt</option>
+                                    <select
+                                        value={selectedDepot}
+                                        onChange={e => setSelectedDepot(e.target.value)}
+                                        className="pl-9 pr-8 py-2 border border-slate-300 rounded-lg text-sm bg-white focus:ring-primary focus:border-primary block w-full"
+                                    >
+                                        <option value="ALL">Lọc theo Tên Vựa/Agency</option>
+                                        {uniqueDepots.map(d => (
+                                            <option key={d} value={d}>{d}</option>
+                                        ))}
                                     </select>
                                 </div>
                                 <div className="relative w-full sm:w-auto flex-grow xl:flex-grow-0">
@@ -135,6 +204,8 @@ const EprReport = () => {
                                         className="pl-9 pr-4 py-2 border border-slate-300 rounded-lg text-sm focus:ring-primary focus:border-primary block w-full sm:w-64"
                                         placeholder="Tìm kiếm mã GD..."
                                         type="text"
+                                        value={searchQuery}
+                                        onChange={e => setSearchQuery(e.target.value)}
                                     />
                                 </div>
                             </div>
@@ -142,202 +213,88 @@ const EprReport = () => {
 
                         {/* Table */}
                         <div className="overflow-x-auto">
-                            <table className="min-w-full divide-y divide-slate-200">
-                                <thead className="bg-slate-50">
-                                    <tr>
-                                        <th className="px-6 py-4 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider" scope="col">Mã Giao Dịch</th>
-                                        <th className="px-6 py-4 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider" scope="col">Ngày &amp; Giờ</th>
-                                        <th className="px-6 py-4 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider" scope="col">Đơn Vị Thu Gom (Agency)</th>
-                                        <th className="px-6 py-4 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider" scope="col">Loại Vật Liệu</th>
-                                        <th className="px-6 py-4 text-right text-xs font-semibold text-slate-500 uppercase tracking-wider" scope="col">KL Sạch (kg)</th>
-                                        <th className="px-6 py-4 text-right text-xs font-semibold text-slate-500 uppercase tracking-wider" scope="col">Thành Tiền (VNĐ)</th>
-                                        <th className="px-6 py-4 text-center text-xs font-semibold text-slate-500 uppercase tracking-wider" scope="col">Trạng Thái EPR</th>
-                                    </tr>
-                                </thead>
-                                <tbody className="bg-white divide-y divide-slate-200">
-                                    {/* Row 1 */}
-                                    <tr
-                                        className="hover:bg-primary/5 transition-colors cursor-pointer"
-                                        onClick={() => navigate('/nha-may/bao-cao-epr/88210')}>
-                                        <td className="px-6 py-4 whitespace-nowrap">
-                                            <div className="text-sm font-bold text-primary">#TXN-88210</div>
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap">
-                                            <div className="text-sm text-slate-900">24/05/2024</div>
-                                            <div className="text-xs text-slate-500">09:45 AM</div>
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap">
-                                            <div className="flex items-center">
-                                                <div className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold text-xs mr-3">V1</div>
-                                                <div>
-                                                    <div className="text-sm font-medium text-slate-900">Vựa Phế Liệu Minh Tâm</div>
-                                                    <div className="text-xs text-slate-500">Q. Bình Thạnh, TP.HCM</div>
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap">
-                                            <span className="px-2.5 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-50 text-blue-700 border border-blue-100">Nhựa PET</span>
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium text-slate-900">1,250.5</td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-bold text-slate-900">15,631,250</td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-center">
-                                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                                <span className="w-1.5 h-1.5 bg-green-600 rounded-full mr-1.5"></span>Đạt Chuẩn
-                                            </span>
-                                        </td>
-                                    </tr>
-                                    {/* Row 2 */}
-                                    <tr
-                                        className="hover:bg-primary/5 transition-colors cursor-pointer"
-                                        onClick={() => navigate('/nha-may/bao-cao-epr/88209')}>
-                                        <td className="px-6 py-4 whitespace-nowrap">
-                                            <div className="text-sm font-bold text-primary">#TXN-88209</div>
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap">
-                                            <div className="text-sm text-slate-900">24/05/2024</div>
-                                            <div className="text-xs text-slate-500">08:15 AM</div>
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap">
-                                            <div className="flex items-center">
-                                                <div className="h-8 w-8 rounded-full bg-purple-100 flex items-center justify-center text-purple-600 font-bold text-xs mr-3">V2</div>
-                                                <div>
-                                                    <div className="text-sm font-medium text-slate-900">HTX Môi Trường Xanh</div>
-                                                    <div className="text-xs text-slate-500">Q. 7, TP.HCM</div>
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap">
-                                            <span className="px-2.5 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-50 text-yellow-700 border border-yellow-100">Giấy Carton</span>
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium text-slate-900">4,100.0</td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-bold text-slate-900">18,450,000</td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-center">
-                                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                                <span className="w-1.5 h-1.5 bg-green-600 rounded-full mr-1.5"></span>Đạt Chuẩn
-                                            </span>
-                                        </td>
-                                    </tr>
-                                    {/* Row 3 */}
-                                    <tr
-                                        className="hover:bg-primary/5 transition-colors cursor-pointer"
-                                        onClick={() => navigate('/nha-may/bao-cao-epr/88208')}>
-                                        <td className="px-6 py-4 whitespace-nowrap">
-                                            <div className="text-sm font-bold text-primary">#TXN-88208</div>
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap">
-                                            <div className="text-sm text-slate-900">23/05/2024</div>
-                                            <div className="text-xs text-slate-500">16:30 PM</div>
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap">
-                                            <div className="flex items-center">
-                                                <div className="h-8 w-8 rounded-full bg-orange-100 flex items-center justify-center text-orange-600 font-bold text-xs mr-3">V3</div>
-                                                <div>
-                                                    <div className="text-sm font-medium text-slate-900">Đại Lý Thu Gom Thành Đạt</div>
-                                                    <div className="text-xs text-slate-500">TP. Thủ Đức</div>
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap">
-                                            <span className="px-2.5 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-700 border border-gray-200">Nhôm Lon</span>
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium text-slate-900">520.5</td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-bold text-slate-900">19,258,500</td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-center">
-                                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-                                                <span className="w-1.5 h-1.5 bg-yellow-500 rounded-full mr-1.5"></span>Chờ Duyệt
-                                            </span>
-                                        </td>
-                                    </tr>
-                                    {/* Row 4 */}
-                                    <tr
-                                        className="hover:bg-primary/5 transition-colors cursor-pointer"
-                                        onClick={() => navigate('/nha-may/bao-cao-epr/88207')}>
-                                        <td className="px-6 py-4 whitespace-nowrap">
-                                            <div className="text-sm font-bold text-primary">#TXN-88207</div>
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap">
-                                            <div className="text-sm text-slate-900">23/05/2024</div>
-                                            <div className="text-xs text-slate-500">14:10 PM</div>
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap">
-                                            <div className="flex items-center">
-                                                <div className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold text-xs mr-3">V1</div>
-                                                <div>
-                                                    <div className="text-sm font-medium text-slate-900">Vựa Phế Liệu Minh Tâm</div>
-                                                    <div className="text-xs text-slate-500">Q. Bình Thạnh, TP.HCM</div>
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap">
-                                            <span className="px-2.5 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-50 text-blue-700 border border-blue-100">Nhựa HDPE</span>
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium text-slate-900">890.0</td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-bold text-slate-900">8,900,000</td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-center">
-                                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                                <span className="w-1.5 h-1.5 bg-green-600 rounded-full mr-1.5"></span>Đạt Chuẩn
-                                            </span>
-                                        </td>
-                                    </tr>
-                                    {/* Row 5 */}
-                                    <tr
-                                        className="hover:bg-primary/5 transition-colors cursor-pointer"
-                                        onClick={() => navigate('/nha-may/bao-cao-epr/88206')}>
-                                        <td className="px-6 py-4 whitespace-nowrap">
-                                            <div className="text-sm font-bold text-primary">#TXN-88206</div>
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap">
-                                            <div className="text-sm text-slate-900">22/05/2024</div>
-                                            <div className="text-xs text-slate-500">10:00 AM</div>
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap">
-                                            <div className="flex items-center">
-                                                <div className="h-8 w-8 rounded-full bg-purple-100 flex items-center justify-center text-purple-600 font-bold text-xs mr-3">V2</div>
-                                                <div>
-                                                    <div className="text-sm font-medium text-slate-900">HTX Môi Trường Xanh</div>
-                                                    <div className="text-xs text-slate-500">Q. 7, TP.HCM</div>
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap">
-                                            <span className="px-2.5 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-50 text-red-700 border border-red-100">Pin Cũ</span>
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium text-slate-900">120.0</td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-bold text-slate-900">2,400,000</td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-center">
-                                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
-                                                <span className="w-1.5 h-1.5 bg-red-500 rounded-full mr-1.5"></span>Cần Xử Lý
-                                            </span>
-                                        </td>
-                                    </tr>
-                                </tbody>
-                            </table>
+                            {loading ? (
+                                <div className="flex flex-col items-center justify-center py-20 gap-4">
+                                    <span className="w-12 h-12 rounded-full border-4 border-primary border-t-transparent animate-spin"></span>
+                                    <p className="text-slate-500 font-medium">Đang tải dữ liệu giao dịch...</p>
+                                </div>
+                            ) : (
+                                <table className="min-w-full divide-y divide-slate-200">
+                                    <thead className="bg-slate-50">
+                                        <tr>
+                                            <th className="px-6 py-4 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider" scope="col">Mã Giao Dịch</th>
+                                            <th className="px-6 py-4 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider" scope="col">Ngày &amp; Giờ</th>
+                                            <th className="px-6 py-4 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider" scope="col">Đơn Vị Thu Gom (Agency)</th>
+                                            <th className="px-6 py-4 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider" scope="col">Loại Vật Liệu</th>
+                                            <th className="px-6 py-4 text-right text-xs font-semibold text-slate-500 uppercase tracking-wider" scope="col">KL Sạch (kg)</th>
+                                            <th className="px-6 py-4 text-right text-xs font-semibold text-slate-500 uppercase tracking-wider" scope="col">Thành Tiền (VNĐ)</th>
+                                            <th className="px-6 py-4 text-center text-xs font-semibold text-slate-500 uppercase tracking-wider" scope="col">Trạng Thái EPR</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="bg-white divide-y divide-slate-200">
+                                        {filteredOrders.length === 0 ? (
+                                            <tr>
+                                                <td colSpan={7} className="px-6 py-16 text-center text-slate-400 text-sm">
+                                                    Không có giao dịch nào phù hợp bộ lọc.
+                                                </td>
+                                            </tr>
+                                        ) : (
+                                            filteredOrders.map((o) => {
+                                                const orderDate = new Date(o.createdAt);
+                                                return (
+                                                    <tr
+                                                        key={o.id}
+                                                        className="hover:bg-primary/5 transition-colors cursor-pointer"
+                                                        onClick={() => navigate(`/nha-may/bao-cao-epr/${o.id}`)}
+                                                    >
+                                                        <td className="px-6 py-4 whitespace-nowrap">
+                                                            <div className="text-sm font-bold text-primary">#{o.batchCode || o.id.substring(0, 8)}</div>
+                                                        </td>
+                                                        <td className="px-6 py-4 whitespace-nowrap">
+                                                            <div className="text-sm text-slate-900">{orderDate.toLocaleDateString('vi-VN')}</div>
+                                                            <div className="text-xs text-slate-500">{orderDate.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}</div>
+                                                        </td>
+                                                        <td className="px-6 py-4 whitespace-nowrap">
+                                                            <div className="flex items-center">
+                                                                <div className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold text-xs mr-3">
+                                                                    {o.depotName ? o.depotName.charAt(0) : 'K'}
+                                                                </div>
+                                                                <div>
+                                                                    <div className="text-sm font-medium text-slate-900">{o.depotName}</div>
+                                                                </div>
+                                                            </div>
+                                                        </td>
+                                                        <td className="px-6 py-4 whitespace-nowrap">
+                                                            <span className="px-2.5 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-50 text-blue-700 border border-blue-100">{o.materialType}</span>
+                                                        </td>
+                                                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium text-slate-900">
+                                                            {o.netWeight?.toLocaleString('vi-VN') || 0}
+                                                        </td>
+                                                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-bold text-slate-900">
+                                                            {o.subtotal?.toLocaleString('vi-VN') || 0}
+                                                        </td>
+                                                        <td className="px-6 py-4 whitespace-nowrap text-center">
+                                                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                                                <span className="w-1.5 h-1.5 bg-green-600 rounded-full mr-1.5"></span>Đạt Chuẩn
+                                                            </span>
+                                                        </td>
+                                                    </tr>
+                                                );
+                                            })
+                                        )}
+                                    </tbody>
+                                </table>
+                            )}
                         </div>
 
-                        {/* Pagination */}
+                        {/* Pagination (Decorative) */}
                         <div className="bg-white px-4 py-3 flex items-center justify-between border-t border-slate-200 sm:px-6">
                             <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
                                 <div>
                                     <p className="text-sm text-slate-700">
-                                        Hiển thị <span className="font-medium">1</span> đến <span className="font-medium">5</span> của <span className="font-medium">128</span> kết quả
+                                        Hiển thị <span className="font-medium">{filteredOrders.length}</span> giao dịch
                                     </p>
                                 </div>
-                                <nav aria-label="Pagination" className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px">
-                                    <a className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-slate-300 bg-white text-sm font-medium text-slate-500 hover:bg-slate-50" href="#">
-                                        <span className="sr-only">Previous</span>
-                                        <span className="material-symbols-outlined text-sm">chevron_left</span>
-                                    </a>
-                                    <a aria-current="page" className="z-10 bg-primary border-primary text-white relative inline-flex items-center px-4 py-2 border text-sm font-medium" href="#">1</a>
-                                    <a className="bg-white border-slate-300 text-slate-500 hover:bg-slate-50 relative inline-flex items-center px-4 py-2 border text-sm font-medium" href="#">2</a>
-                                    <a className="bg-white border-slate-300 text-slate-500 hover:bg-slate-50 hidden md:inline-flex relative items-center px-4 py-2 border text-sm font-medium" href="#">3</a>
-                                    <span className="relative inline-flex items-center px-4 py-2 border border-slate-300 bg-white text-sm font-medium text-slate-700">...</span>
-                                    <a className="bg-white border-slate-300 text-slate-500 hover:bg-slate-50 hidden md:inline-flex relative items-center px-4 py-2 border text-sm font-medium" href="#">8</a>
-                                    <a className="bg-white border-slate-300 text-slate-500 hover:bg-slate-50 relative inline-flex items-center px-4 py-2 border text-sm font-medium" href="#">9</a>
-                                    <a className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-slate-300 bg-white text-sm font-medium text-slate-500 hover:bg-slate-50" href="#">
-                                        <span className="sr-only">Next</span>
-                                        <span className="material-symbols-outlined text-sm">chevron_right</span>
-                                    </a>
-                                </nav>
                             </div>
                         </div>
                     </div>
@@ -357,14 +314,6 @@ const EprReport = () => {
                             <p className="text-slate-500 text-sm leading-relaxed mb-4">
                                 Nền tảng số hóa ngành phế liệu hàng đầu Việt Nam. Minh bạch, hiệu quả, bền vững.
                             </p>
-                            <div className="flex space-x-3">
-                                <a className="w-8 h-8 bg-slate-50 border border-slate-200 rounded-full flex items-center justify-center text-slate-400 hover:text-primary transition-colors" href="#">
-                                    <span className="text-xs font-bold">FB</span>
-                                </a>
-                                <a className="w-8 h-8 bg-slate-50 border border-slate-200 rounded-full flex items-center justify-center text-slate-400 hover:text-primary transition-colors" href="#">
-                                    <span className="text-xs font-bold">IN</span>
-                                </a>
-                            </div>
                         </div>
                         <div>
                             <h4 className="font-bold text-slate-900 mb-4 text-sm uppercase">Sản phẩm</h4>

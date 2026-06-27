@@ -21,31 +21,12 @@ const OrderConfirm = () => {
             try {
                 const res = await factoryService.getBatchDetail(batchId);
                 setBatch(res);
-                setBidPrice(res.unitPrice);
+                setBidPrice(res.unitPrice || 0);
+
             } catch (err) {
                 console.error('Error fetching batch detail:', err);
-                toast.error('Không tìm thấy thông tin lô hàng. Sử dụng thông tin giả lập!');
-                // Fallback mock detail
-                const fallback = {
-                    id: batchId,
-                    batchCode: 'BATCH-8821',
-                    materialType: 'CARDBOARD',
-                    estimatedWeightKg: 12500,
-                    unitPrice: 3200,
-                    description: 'Giấy carton hỗn hợp ép kiện chất lượng cao, độ ẩm thấp, sạch tạp chất.',
-                    moisturePercentage: 11.5,
-                    purityPercentage: 98.0,
-                    thumbnailImageUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAtQo_BXLTCb7oQmjrGu166gQf9vcKoMtG_l_vj0srHle8_RiRGoVAD3an26lfGqWsNUxx2K3CiVIqs8GCKXlorB5u380ylN_YH34MZDNqffezCHv2sS-2Bya07Wq6nlhdO_d68qoJG7YW53ctPoD-KT2AqZjmyiWNH1NWMqaM6P380hKnHvhyYTbSyFyBNCuZBSnuR_Xc0BH23J8N4zvVHs9SnSZ1HuNzTpmbB1QD-hRkkbwrflSXjqRYZser0-Jcdb-PIgDBoEcU',
-                    images: [],
-                    depot: {
-                        companyName: 'Vựa Phế Liệu Minh Khôi',
-                        address: '123 QL1A, Bình Hưng Hòa',
-                        city: 'Quận 9, TP.HCM',
-                        reputationScore: 98,
-                    }
-                };
-                setBatch(fallback);
-                setBidPrice(fallback.unitPrice);
+                toast.error('Không tìm thấy thông tin lô hàng từ máy chủ!');
+                setBatch(null);
             } finally {
                 setLoading(false);
             }
@@ -73,6 +54,19 @@ const OrderConfirm = () => {
             <div className="font-sans text-slate-900 bg-slate-50 min-h-screen flex flex-col items-center justify-center">
                 <span className="w-12 h-12 rounded-full border-4 border-primary border-t-transparent animate-spin"></span>
                 <p className="text-slate-500 font-bold mt-4">Đang tải thông tin xác nhận đơn hàng...</p>
+            </div>
+        );
+    }
+
+    if (!batch) {
+        return (
+            <div className="font-sans text-slate-900 bg-slate-50 min-h-screen flex flex-col items-center justify-center p-6 text-center">
+                <p className="text-5xl mb-4">⚠️</p>
+                <h2 className="text-xl font-bold text-slate-800">Không tìm thấy lô hàng</h2>
+                <p className="text-sm text-slate-400 mt-2">Thông tin lô hàng không tồn tại hoặc đã bị xóa.</p>
+                <Link to="/recycle/market" className="mt-6 bg-primary text-white font-bold py-2.5 px-6 rounded-xl hover:bg-secondary transition-colors">
+                    Quay lại chợ nguyên liệu
+                </Link>
             </div>
         );
     }
@@ -175,7 +169,9 @@ const OrderConfirm = () => {
                                         </div>
                                         <div>
                                             <span className="text-xs text-slate-500 uppercase font-semibold">Đơn giá niêm yết</span>
-                                            <p className="text-lg font-bold text-primary">{batch.unitPrice.toLocaleString('vi-VN')} đ/kg</p>
+                                            <p className="text-lg font-bold text-primary">
+                                                {batch.unitPrice ? `${batch.unitPrice.toLocaleString('vi-VN')} đ/kg` : 'Chờ thỏa thuận'}
+                                            </p>
                                         </div>
                                     </div>
                                 </div>
@@ -188,10 +184,7 @@ const OrderConfirm = () => {
                                 <span className="text-slate-500">Địa chỉ kho:</span>
                                 <span className="font-medium text-slate-700">{batch.depot.address}, {batch.depot.city}</span>
                             </div>
-                            <div className="mt-2 flex justify-between items-center text-sm">
-                                <span className="text-slate-500">Uy tín vựa:</span>
-                                <span className="font-extrabold text-green-700">{batch.depot.reputationScore} / 100 Điểm</span>
-                            </div>
+
                         </div>
 
                         {/* Interactive Bid Form */}

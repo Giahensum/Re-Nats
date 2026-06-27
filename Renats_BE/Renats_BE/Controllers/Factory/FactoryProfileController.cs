@@ -109,6 +109,12 @@ public class FactoryProfileController : ControllerBase
         if (dto.MinPurityRequired.HasValue)
             factory.MinPurityRequired = dto.MinPurityRequired;
 
+        // Cập nhật giấy tờ chứng nhận (nếu có URL truyền lên)
+        if (!string.IsNullOrWhiteSpace(dto.BusinessLicenseUrl))
+            factory.BusinessLicenseUrl = dto.BusinessLicenseUrl;
+        if (!string.IsNullOrWhiteSpace(dto.EnvironmentLicenseUrl))
+            factory.EnvironmentLicenseUrl = dto.EnvironmentLicenseUrl;
+
         // Đánh dấu hoàn thiện profile khi:
         // 1) Đã chọn loại vật liệu chính VÀ
         // 2) Đã có ít nhất 1 giấy tờ upload
@@ -124,6 +130,36 @@ public class FactoryProfileController : ControllerBase
             message = "Cập nhật hồ sơ nhà máy thành công.",
             profile = MapToDto(factory)
         });
+    }
+
+    // ────────────────────────────────────────────────────────────────────────
+    // POST /api/factory/profile/upload-temp
+    // Multipart form: field "file"
+    // ────────────────────────────────────────────────────────────────────────
+    [HttpPost("upload-temp")]
+    [Consumes("multipart/form-data")]
+    public async Task<IActionResult> UploadTemp(IFormFile file)
+    {
+        if (file == null || file.Length == 0)
+            return BadRequest("File không hợp lệ hoặc rỗng.");
+
+        if (file.Length > 10 * 1024 * 1024)
+            return BadRequest("File vượt quá kích thước cho phép (10 MB).");
+
+        var allowedExt = new[] { ".jpg", ".jpeg", ".png", ".webp", ".pdf" };
+        var ext = Path.GetExtension(file.FileName).ToLowerInvariant();
+        if (!allowedExt.Contains(ext))
+            return BadRequest("Chỉ chấp nhận file ảnh (JPG, PNG, WEBP) hoặc PDF.");
+
+        try
+        {
+            var url = await _cloudinary.UploadFileAsync(file, "factory-documents-temp");
+            return Ok(new { url });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, $"Lỗi upload file: {ex.Message}");
+        }
     }
 
     // ────────────────────────────────────────────────────────────────────────
@@ -238,6 +274,8 @@ public class UpdateFactoryProfileDto
     public List<string>? AcceptedMaterialTypes { get; set; }
     public decimal? CapacityPerMonthTon  { get; set; }
     public decimal? MinPurityRequired    { get; set; }
+    public string? BusinessLicenseUrl    { get; set; }
+    public string? EnvironmentLicenseUrl { get; set; }
 }
 
 public class UploadDocumentDto

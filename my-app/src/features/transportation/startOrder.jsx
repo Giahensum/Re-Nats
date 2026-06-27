@@ -1,4 +1,8 @@
-import React from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { useAuth } from '../../app/AuthContext';
+import { transportService } from '../../services/transportService';
+import { useToast } from '../../context/ToastContext';
 
 const styles = `
   .mobile-container {
@@ -54,7 +58,60 @@ const styles = `
   }
 `;
 
+const MATERIAL_LABEL = {
+    STEEL: 'Sắt thép', ALUMINUM: 'Nhôm', COPPER: 'Đồng', LEAD: 'Chì/Ắc quy',
+    PET: 'Nhựa PET', HDPE: 'Nhựa HDPE', PP: 'Nhựa PP', PVC: 'Nhựa PVC',
+    CARDBOARD: 'Giấy carton', PAPER: 'Giấy thải', BATTERY: 'Pin Lithium',
+    ELECTRONIC_WASTE: 'Điện tử', RUBBER: 'Cao su', OIL: 'Dầu nhớt',
+    IRON: 'Sắt vụn', OTHER: 'Khác',
+};
+
 export default function StartOrder() {
+    const { user, logout } = useAuth();
+    const navigate = useNavigate();
+    const toast = useToast();
+    const [trips, setTrips] = useState([]);
+    const [loading, setLoading] = useState(true);
+
+    const tabParam = new URLSearchParams(window.location.search).get('tab') || 'active';
+    const [activeTab, setActiveTab] = useState(tabParam);
+
+    useEffect(() => {
+        if (tabParam === 'active' || tabParam === 'history') {
+            setActiveTab(tabParam);
+        }
+    }, [tabParam]);
+
+    const loadTrips = useCallback(async () => {
+        try {
+            setLoading(true);
+            const data = await transportService.getMyJobs();
+            setTrips(data || []);
+        } catch (err) {
+            toast?.error('Không thể tải danh sách chuyến đi.');
+        } finally {
+            setLoading(false);
+        }
+    }, [toast]);
+
+    useEffect(() => {
+        loadTrips();
+    }, [loadTrips]);
+
+    const handleTabChange = (tabName) => {
+        setActiveTab(tabName);
+        navigate(`/van-chuyen/chuyen-xe?tab=${tabName}`);
+    };
+
+    const activeTripsCount = trips.filter(t => t.status !== 'DELIVERED' && t.status !== 'CANCELLED').length;
+    const historyTripsCount = trips.filter(t => t.status === 'DELIVERED' || t.status === 'CANCELLED').length;
+
+    const filteredTrips = trips.filter(trip => 
+        activeTab === 'active' 
+            ? (trip.status !== 'DELIVERED' && trip.status !== 'CANCELLED')
+            : (trip.status === 'DELIVERED' || trip.status === 'CANCELLED')
+    );
+
     return (
         <>
             <style>{styles}</style>
@@ -82,7 +139,7 @@ export default function StartOrder() {
                                 </div>
                                 <div>
                                     <p className="text-xs text-green-50 font-medium text-shadow-sm">Xin chào,</p>
-                                    <h2 className="font-bold text-lg leading-tight text-shadow-md">Tài xế Nguyễn Văn A</h2>
+                                    <h2 className="font-bold text-lg leading-tight text-shadow-md">{user?.name || 'Tài xế'}</h2>
                                 </div>
                             </div>
                             <button className="relative p-2 rounded-full hover:bg-white/10 transition-colors backdrop-blur-sm">
@@ -92,151 +149,205 @@ export default function StartOrder() {
                         </div>
                         <div className="flex justify-between items-end">
                             <div>
-                                <h1 className="text-2xl font-extrabold tracking-tight text-shadow-md">Lịch trình hôm nay</h1>
-                                <p className="text-green-50 text-sm mt-1 text-shadow-sm opacity-90">Thứ Ba, 24/10/2023</p>
+                                <h1 className="text-2xl font-extrabold tracking-tight text-shadow-md">Chuyến đi của tôi</h1>
+                                <p className="text-green-50 text-sm mt-1 text-shadow-sm opacity-90">
+                                    {new Date().toLocaleDateString('vi-VN', { weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric' })}
+                                </p>
                             </div>
                             <div className="text-right">
-                                <span className="block text-3xl font-bold text-shadow-md">3</span>
-                                <span className="text-xs text-green-50 uppercase font-semibold text-shadow-sm opacity-90">Chuyến</span>
+                                <span className="block text-3xl font-bold text-shadow-md">{activeTripsCount}</span>
+                                <span className="text-xs text-green-50 uppercase font-semibold text-shadow-sm opacity-90">Hoạt động</span>
                             </div>
                         </div>
                     </header>
 
                     {/* Main content */}
                     <main className="flex-1 p-4 pb-32 space-y-5 relative z-10 -mt-2">
-                        {/* Trip 1 – Active */}
-                        <div className="bg-white rounded-xl card-shadow overflow-hidden active-border transform transition-all hover:scale-[1.01]">
-                            <div className="bg-green-50 px-5 py-3 border-b border-green-100 flex justify-between items-center">
-                                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-green-100 text-green-800">
-                                    <span className="w-2 h-2 rounded-full bg-green-600 animate-pulse"></span>
-                                    Đang thực hiện
-                                </span>
-                                <span className="text-sm font-bold text-slate-700">#TRIP-8392</span>
-                            </div>
-                            <div className="p-5">
-                                <div className="flex items-start gap-4 mb-5">
-                                    <div className="flex flex-col items-center">
-                                        <div className="w-12 h-12 rounded-full bg-blue-50 flex items-center justify-center text-blue-600 mb-1">
-                                            <span className="material-symbols-outlined text-2xl">schedule</span>
-                                        </div>
-                                        <span className="text-xs font-bold text-slate-500">08:30</span>
-                                    </div>
-                                    <div className="flex-1">
-                                        <h3 className="text-lg font-bold text-slate-900 mb-1">Kho Phế Liệu An Khang</h3>
-                                        <p className="text-slate-500 text-sm flex items-start gap-1 leading-relaxed">
-                                            <span className="material-symbols-outlined text-base mt-0.5 flex-shrink-0">location_on</span>
-                                            123 Đường Số 7, KCN Tân Tạo, Q. Bình Tân, TP.HCM
-                                        </p>
-                                    </div>
-                                </div>
-                                <div className="flex items-center gap-3 bg-slate-50 p-3 rounded-lg border border-slate-100 mb-6">
-                                    <div className="w-10 h-10 bg-slate-200 rounded-full flex items-center justify-center">
-                                        <span className="material-symbols-outlined text-slate-600">local_shipping</span>
-                                    </div>
-                                    <div>
-                                        <p className="text-xs text-slate-500 font-medium uppercase">Phương tiện yêu cầu</p>
-                                        <p className="text-sm font-bold text-slate-800">Xe tải 2.5 Tấn (Thùng kín)</p>
-                                    </div>
-                                </div>
-                                <div className="flex justify-center">
-                                    <button className="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold py-4 px-6 rounded-xl shadow-lg shadow-slate-300/50 flex items-center justify-center gap-2 transition-all active:scale-95 text-lg">
-                                        <span className="material-symbols-outlined">play_circle</span>
-                                        Bắt đầu chuyến
+                        {/* Tab Switcher */}
+                        <div className="flex bg-white p-1 rounded-xl shadow-sm border border-slate-100">
+                            <button
+                                onClick={() => handleTabChange('active')}
+                                className={`flex-1 py-2 text-center text-xs font-bold rounded-lg transition-all ${
+                                    activeTab === 'active'
+                                        ? 'bg-green-600 text-white shadow-sm'
+                                        : 'text-slate-500 hover:text-slate-800'
+                                }`}
+                            >
+                                Đang hoạt động ({activeTripsCount})
+                            </button>
+                            <button
+                                onClick={() => handleTabChange('history')}
+                                className={`flex-1 py-2 text-center text-xs font-bold rounded-lg transition-all ${
+                                    activeTab === 'history'
+                                        ? 'bg-green-600 text-white shadow-sm'
+                                        : 'text-slate-500 hover:text-slate-800'
+                                }`}
+                            >
+                                Lịch sử chuyến đi ({historyTripsCount})
+                            </button>
+                        </div>
+
+                        {loading ? (
+                            Array.from({ length: 2 }).map((_, i) => (
+                                <div key={i} className="h-48 bg-slate-100 rounded-2xl animate-pulse" />
+                            ))
+                        ) : filteredTrips.length === 0 ? (
+                            <div className="text-center py-16 bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
+                                <span className="material-symbols-outlined text-5xl text-slate-300 block mb-3">local_shipping</span>
+                                <p className="font-semibold text-slate-505">
+                                    {activeTab === 'active' ? 'Chưa nhận chuyến xe nào' : 'Chưa có chuyến đi lịch sử'}
+                                </p>
+                                <p className="text-xs text-slate-400 mt-1">
+                                    {activeTab === 'active' 
+                                        ? 'Vui lòng quay lại màn hình "Chợ đơn" để nhận đơn hàng.'
+                                        : 'Các chuyến đi hoàn thành sẽ được lưu trữ tại đây.'}
+                                </p>
+                                {activeTab === 'active' && (
+                                    <button
+                                        onClick={() => navigate('/transport/market')}
+                                        className="mt-5 bg-green-600 text-white text-xs font-bold px-4 py-2.5 rounded-xl hover:bg-green-700 transition"
+                                    >
+                                        Đến Chợ đơn
                                     </button>
-                                </div>
+                                )}
                             </div>
-                        </div>
+                        ) : (
+                            filteredTrips.map(trip => {
+                                const isAssigned = trip.status === 'ASSIGNED';
+                                const isPickedUp = trip.status === 'PICKED_UP';
+                                const isOnTheWay = trip.status === 'ON_THE_WAY' || isPickedUp;
+                                const isDelivered = trip.status === 'DELIVERED';
+                                const isCancelled = trip.status === 'CANCELLED';
 
-                        {/* Trip 2 – Upcoming */}
-                        <div className="bg-white rounded-xl card-shadow overflow-hidden opacity-90">
-                            <div className="px-5 py-3 border-b border-slate-100 flex justify-between items-center">
-                                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-600">
-                                    Sắp tới
-                                </span>
-                                <span className="text-sm font-bold text-slate-400">#TRIP-8393</span>
-                            </div>
-                            <div className="p-5">
-                                <div className="flex items-start gap-4">
-                                    <div className="flex flex-col items-center">
-                                        <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 mb-1">
-                                            <span className="material-symbols-outlined text-xl">schedule</span>
+                                return (
+                                    <div key={trip.id} className="bg-white rounded-xl card-shadow overflow-hidden active-border transform transition-all hover:scale-[1.01]">
+                                        <div className="bg-slate-50 px-5 py-3 border-b border-slate-100 flex justify-between items-center">
+                                            <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold ${
+                                                isAssigned ? 'bg-blue-100 text-blue-800' :
+                                                isOnTheWay ? 'bg-amber-100 text-amber-800' :
+                                                isDelivered ? 'bg-green-100 text-green-800' :
+                                                'bg-red-100 text-red-800'
+                                            }`}>
+                                                {isOnTheWay && <span className="w-2 h-2 rounded-full bg-amber-600 animate-pulse"></span>}
+                                                {isAssigned ? 'Chờ lấy hàng' :
+                                                 isOnTheWay ? 'Đang di chuyển' :
+                                                 isDelivered ? 'Đã hoàn thành' : 'Đã huỷ'}
+                                            </span>
+                                            <span className="text-sm font-bold text-slate-700">#TRIP-{trip.id.substring(0, 8).toUpperCase()}</span>
                                         </div>
-                                        <span className="text-xs font-bold text-slate-400">10:45</span>
-                                    </div>
-                                    <div className="flex-1">
-                                        <h3 className="text-base font-bold text-slate-800 mb-1">Vựa Ve Chai Thành Đạt</h3>
-                                        <p className="text-slate-500 text-sm flex items-start gap-1 leading-relaxed mb-3">
-                                            <span className="material-symbols-outlined text-base mt-0.5 flex-shrink-0">location_on</span>
-                                            456 QL1A, P. Linh Trung, TP. Thủ Đức
-                                        </p>
-                                        <div className="inline-flex items-center gap-2 text-xs font-medium text-slate-600 bg-slate-50 px-2 py-1 rounded border border-slate-200">
-                                            <span className="material-symbols-outlined text-sm">local_shipping</span>
-                                            Xe bán tải
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
 
-                        {/* Trip 3 – Upcoming */}
-                        <div className="bg-white rounded-xl card-shadow overflow-hidden opacity-75">
-                            <div className="px-5 py-3 border-b border-slate-100 flex justify-between items-center">
-                                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-600">
-                                    Sắp tới
-                                </span>
-                                <span className="text-sm font-bold text-slate-400">#TRIP-8394</span>
-                            </div>
-                            <div className="p-5">
-                                <div className="flex items-start gap-4">
-                                    <div className="flex flex-col items-center">
-                                        <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 mb-1">
-                                            <span className="material-symbols-outlined text-xl">schedule</span>
+                                        <div className="p-5">
+                                            <div className="space-y-4 mb-4">
+                                                <div className="flex gap-3">
+                                                    <div className="flex flex-col items-center">
+                                                        <div className="w-7 h-7 rounded-full bg-green-50 flex items-center justify-center text-green-600 font-bold text-xs shrink-0">A</div>
+                                                        <div className="w-0.5 h-10 bg-slate-200"></div>
+                                                    </div>
+                                                    <div>
+                                                        <p className="text-xs text-slate-400 font-medium">Điểm nhận hàng (Vựa)</p>
+                                                        <h4 className="font-bold text-slate-800 text-sm leading-tight">{trip.depotName}</h4>
+                                                    </div>
+                                                </div>
+                                                <div className="flex gap-3">
+                                                    <div className="w-7 h-7 rounded-full bg-blue-50 flex items-center justify-center text-blue-600 font-bold text-xs shrink-0">B</div>
+                                                    <div>
+                                                        <p className="text-xs text-slate-400 font-medium">Điểm giao hàng (Nhà máy)</p>
+                                                        <h4 className="font-bold text-slate-800 text-sm leading-tight">{trip.factoryName}</h4>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <div className="grid grid-cols-2 gap-2 mb-4 bg-slate-50 p-3 rounded-lg border border-slate-100">
+                                                <div>
+                                                    <p className="text-[10px] text-slate-400 font-medium uppercase">Hàng hoá</p>
+                                                    <p className="text-xs font-bold text-slate-800 leading-tight">
+                                                        {(trip.totalKg / 1000).toFixed(1)} tấn {MATERIAL_LABEL[trip.materialType] || trip.materialType}
+                                                    </p>
+                                                </div>
+                                                <div>
+                                                    <p className="text-[10px] text-slate-400 font-medium uppercase">Khoảng cách</p>
+                                                    <p className="text-xs font-bold text-slate-800 leading-tight">
+                                                        {trip.distanceKm} km
+                                                    </p>
+                                                </div>
+                                            </div>
+
+                                            {/* Actions */}
+                                            {isAssigned && (
+                                                <button
+                                                    onClick={() => navigate(`/van-chuyen/checkin?jobId=${trip.id}`)}
+                                                    className="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold py-3 px-6 rounded-xl shadow-lg flex items-center justify-center gap-2 transition-all active:scale-95 text-sm"
+                                                >
+                                                    <span className="material-symbols-outlined text-lg">play_circle</span>
+                                                    Bắt đầu chuyến đi
+                                                </button>
+                                            )}
+                                            {isOnTheWay && (
+                                                <button
+                                                    onClick={() => navigate(`/van-chuyen/di-chuyen?jobId=${trip.id}`)}
+                                                    className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-xl shadow-lg flex items-center justify-center gap-2 transition-all active:scale-95 text-sm"
+                                                >
+                                                    <span className="material-symbols-outlined text-lg">local_shipping</span>
+                                                    Đến Nhà máy &amp; Giao hàng
+                                                </button>
+                                            )}
+                                            {isDelivered && (
+                                                <div className="w-full bg-green-50 text-green-700 font-semibold py-2 px-4 rounded-lg text-center text-xs border border-green-200">
+                                                    Đã giao hàng thành công
+                                                </div>
+                                            )}
                                         </div>
-                                        <span className="text-xs font-bold text-slate-400">14:00</span>
                                     </div>
-                                    <div className="flex-1">
-                                        <h3 className="text-base font-bold text-slate-800 mb-1">Nhà Máy Giấy Sài Gòn</h3>
-                                        <p className="text-slate-500 text-sm flex items-start gap-1 leading-relaxed mb-3">
-                                            <span className="material-symbols-outlined text-base mt-0.5 flex-shrink-0">location_on</span>
-                                            KCN Mỹ Xuân A, Tân Thành, BR-VT
-                                        </p>
-                                        <div className="inline-flex items-center gap-2 text-xs font-medium text-slate-600 bg-slate-50 px-2 py-1 rounded border border-slate-200">
-                                            <span className="material-symbols-outlined text-sm">local_shipping</span>
-                                            Xe tải 5 Tấn
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+                                );
+                            })
+                        )}
                     </main>
 
                     {/* Bottom Navigation */}
                     <nav className="bg-white border-t border-slate-200 sticky bottom-0 z-50 pb-safe">
                         <div className="flex justify-between items-end h-[72px] px-2 relative">
-                            <a className="flex flex-col items-center justify-center w-full h-16 pb-1 text-slate-400 hover:text-primary transition-colors" href="#">
-                                <span className="material-symbols-outlined text-2xl mb-0.5">home</span>
-                                <span className="text-[10px] font-medium">Trang chủ</span>
-                            </a>
-                            <a className="flex flex-col items-center justify-center w-full h-16 pb-1 text-primary" href="#">
-                                <span className="material-symbols-outlined text-2xl mb-0.5 fill-current">local_shipping</span>
+                            <Link to="/transport/market" className="flex flex-col items-center justify-center w-full h-16 pb-1 text-slate-400 hover:text-primary transition-colors">
+                                <span className="material-symbols-outlined text-2xl mb-0.5">storefront</span>
+                                <span className="text-[10px] font-medium">Chợ đơn</span>
+                            </Link>
+                            <button
+                                onClick={() => handleTabChange('active')}
+                                className={`flex flex-col items-center justify-center w-full h-16 pb-1 ${
+                                    activeTab === 'active' ? 'text-green-600' : 'text-slate-400 hover:text-primary transition-colors'
+                                }`}
+                            >
+                                <span className={`material-symbols-outlined text-2xl mb-0.5 ${activeTab === 'active' ? 'fill-current' : ''}`}>local_shipping</span>
                                 <span className="text-[10px] font-bold">Chuyến đi</span>
-                            </a>
+                            </button>
                             <div className="w-full flex justify-center h-full relative z-10">
-                                <a className="qr-btn-container flex flex-col items-center justify-center w-full" href="#">
+                                <Link to="/van-chuyen/checkin" className="qr-btn-container flex flex-col items-center justify-center w-full">
                                     <div className="qr-btn w-14 h-14 rounded-full flex items-center justify-center text-white transform transition-transform active:scale-95 border-4 border-slate-50">
                                         <span className="material-symbols-outlined text-3xl">qr_code_scanner</span>
                                     </div>
                                     <span className="text-[10px] font-medium text-slate-500 mt-1">QR Code</span>
-                                </a>
+                                </Link>
                             </div>
-                            <a className="flex flex-col items-center justify-center w-full h-16 pb-1 text-slate-400 hover:text-primary transition-colors" href="#">
+                            <button
+                                onClick={() => handleTabChange('history')}
+                                className={`flex flex-col items-center justify-center w-full h-16 pb-1 ${
+                                    activeTab === 'history' ? 'text-green-600' : 'text-slate-400 hover:text-primary transition-colors'
+                                }`}
+                            >
                                 <span className="material-symbols-outlined text-2xl mb-0.5">history</span>
                                 <span className="text-[10px] font-medium">Lịch sử</span>
-                            </a>
-                            <a className="flex flex-col items-center justify-center w-full h-16 pb-1 text-slate-400 hover:text-primary transition-colors" href="#">
-                                <span className="material-symbols-outlined text-2xl mb-0.5">person</span>
-                                <span className="text-[10px] font-medium">Tài khoản</span>
-                            </a>
+                            </button>
+                            <button
+                                onClick={() => {
+                                    if (window.confirm("Bạn có chắc chắn muốn đăng xuất?")) {
+                                        logout();
+                                        navigate('/dang-nhap');
+                                    }
+                                }}
+                                className="flex flex-col items-center justify-center w-full h-16 pb-1 text-slate-400 hover:text-primary transition-colors"
+                            >
+                                <span className="material-symbols-outlined text-2xl mb-0.5">logout</span>
+                                <span className="text-[10px] font-medium">Đăng xuất</span>
+                            </button>
                         </div>
                     </nav>
                 </div>

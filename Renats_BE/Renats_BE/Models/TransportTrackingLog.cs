@@ -7,6 +7,8 @@ public class TransportTrackingLog
     public decimal? Latitude { get; set; }
     public decimal? Longitude { get; set; }
     public string? Note { get; set; }
+    public string? LogType { get; set; }
+    public string? ImageUrl { get; set; }
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
     // Navigation

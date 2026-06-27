@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../app/AuthContext';
 import { getFactoryProfile } from '../../../services/factoryService';
+import { notificationService } from '../../../services/notificationService';
 
 // Icons matching SellerDashboard style
 const IconBell = () => (
@@ -42,6 +43,8 @@ const HeaderDoanhNghiep = ({ activeTab = '' }) => {
     const navigate = useNavigate();
     const { user, logout } = useAuth();
     const [dropdownOpen, setDropdownOpen] = useState(false);
+    const [notifOpen, setNotifOpen] = useState(false);
+    const [notifications, setNotifications] = useState([]);
 
     const displayName = user?.fullName || 'Nhà máy Tái Chế A';
     const displayRole = 'Nhà máy';
@@ -58,6 +61,39 @@ const HeaderDoanhNghiep = ({ activeTab = '' }) => {
         RUBBER: { label: 'Cao su', icon: '🛞' }, OIL: { label: 'Dầu nhớt', icon: '🛢️' },
     };
     const matInfo = profile?.primaryMaterialType ? MATERIAL_ICONS[profile.primaryMaterialType] : null;
+
+    const fetchNotifications = () => {
+        notificationService.getNotifications()
+            .then(data => setNotifications(data || []))
+            .catch(err => console.error('Lỗi tải thông báo:', err));
+    };
+
+    useEffect(() => {
+        fetchNotifications();
+        // Tự động reload thông báo sau mỗi 30s
+        const interval = setInterval(fetchNotifications, 30000);
+        return () => clearInterval(interval);
+    }, []);
+
+    const unreadCount = notifications.filter(n => !n.isRead).length;
+
+    const handleMarkAsRead = async (id) => {
+        try {
+            await notificationService.markAsRead(id);
+            setNotifications(prev => prev.map(n => n.id === id ? { ...n, isRead: true } : n));
+        } catch (err) {
+            console.error(err);
+        }
+    };
+
+    const handleMarkAllAsRead = async () => {
+        try {
+            await notificationService.markAllAsRead();
+            setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
+        } catch (err) {
+            console.error(err);
+        }
+    };
 
     const handleLogout = () => {
         setDropdownOpen(false);
@@ -110,12 +146,63 @@ const HeaderDoanhNghiep = ({ activeTab = '' }) => {
 
                 {/* Right: notification + user */}
                 <div className="flex items-center gap-3">
-                    <button className="relative p-2.5 rounded-xl hover:bg-slate-100 text-slate-500 transition-colors">
-                        <IconBell />
-                        <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full ring-2 ring-white" />
-                    </button>
+                    <div className="relative">
+                        <button 
+                            onClick={() => setNotifOpen(o => !o)}
+                            className="relative p-2.5 rounded-xl hover:bg-slate-100 text-slate-500 transition-colors focus:outline-none cursor-pointer"
+                        >
+                            <IconBell />
+                            {unreadCount > 0 && (
+                                <span className="absolute top-1.5 right-1.5 w-4 h-4 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center ring-2 ring-white">
+                                    {unreadCount}
+                                </span>
+                            )}
+                        </button>
+
+                        {notifOpen && (
+                            <>
+                                <div className="fixed inset-0 z-40" onClick={() => setNotifOpen(false)} />
+                                <div className="absolute right-0 top-full mt-2 w-80 bg-white rounded-2xl shadow-xl border border-slate-100 overflow-hidden z-50 animate-fade-in max-h-96 flex flex-col">
+                                    <div className="px-4 py-3 border-b border-slate-100 bg-slate-50 flex items-center justify-between">
+                                        <p className="text-xs text-slate-500 font-bold uppercase">Thông báo ({unreadCount})</p>
+                                        {unreadCount > 0 && (
+                                            <button 
+                                                onClick={handleMarkAllAsRead} 
+                                                className="text-[11px] text-green-700 font-bold hover:underline"
+                                            >
+                                                Đọc tất cả
+                                            </button>
+                                        )}
+                                    </div>
+                                    <div className="overflow-y-auto flex-1 divide-y divide-slate-100">
+                                        {notifications.length === 0 ? (
+                                            <div className="p-8 text-center text-slate-400 text-xs">
+                                                Không có thông báo mới
+                                            </div>
+                                        ) : (
+                                            notifications.map(n => (
+                                                <div 
+                                                    key={n.id} 
+                                                    onClick={() => handleMarkAsRead(n.id)}
+                                                    className={`p-3.5 text-left transition-colors cursor-pointer hover:bg-slate-50 ${!n.isRead ? 'bg-green-50/50' : ''}`}
+                                                >
+                                                    <div className="flex items-start justify-between gap-1.5">
+                                                        <p className={`text-xs ${!n.isRead ? 'font-bold text-slate-800' : 'text-slate-600'}`}>{n.title}</p>
+                                                        {!n.isRead && <span className="w-2 h-2 bg-green-600 rounded-full shrink-0 mt-1" />}
+                                                    </div>
+                                                    <p className="text-[11px] text-slate-500 mt-1 leading-relaxed">{n.message}</p>
+                                                    <p className="text-[9px] text-slate-400 mt-1.5">{new Date(n.createdAt).toLocaleString('vi-VN')}</p>
+                                                </div>
+                                            ))
+                                        )}
+                                    </div>
+                                </div>
+                            </>
+                        )}
+                    </div>
 
                     <div className="h-8 w-px bg-slate-200"></div>
+
 
                     {/* Account Dropdown */}
                     <div className="relative">

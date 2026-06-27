@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { depotService } from '../../services/depotService';
 import FactoryPickerModal from './FactoryPickerModal';
+import { useToast } from '../../context/ToastContext';
+
 
 // ── Định cấu hình 3 bước ──────────────────────────────────────────────────
 const STEPS = [
@@ -16,6 +18,8 @@ const vnd = n => n.toLocaleString('vi-VN') + ' ₫';
 
 export default function CreateBatchOrder() {
     const navigate = useNavigate();
+    const toast = useToast();
+
 
     // ── Khởi tạo State Form ─────────────────────────────────────────────────
     const [step, setStep] = useState(1);
@@ -25,6 +29,7 @@ export default function CreateBatchOrder() {
     const [depotProfile, setDepotProfile] = useState(null);
     const [showFactoryPicker, setShowFactoryPicker] = useState(false);
     const [selectedFactory, setSelectedFactory] = useState(null);
+    const [transportType, setTransportType] = useState(''); // 'RENATS_DRIVER' | 'DEPOT_SELF'
 
     const [form, setForm] = useState({
         wasteType: '',         // Loại phế liệu (tên hiển thị)
@@ -33,7 +38,7 @@ export default function CreateBatchOrder() {
         unit: 'kg',
         location: 'Khu A - Phân khu phân loại 1',
         note: '',
-        unitPrice: '12000',    // Đơn giá ước tính muốn bán
+        unitPrice: '',         // Không nhập giá ở kho, nhà máy sẽ tự nhập
 
         // Bước 2: Tỷ lệ nguồn gốc (%)
         sourceRatio: {
@@ -97,9 +102,10 @@ export default function CreateBatchOrder() {
     // Lấy vị trí GPS hiện tại của kho vựa và lưu vào profile dạng Địa chỉ chữ
     const handleGetWarehouseGPS = () => {
         if (!navigator.geolocation) {
-            alert('Trình duyệt của bạn không hỗ trợ định vị GPS.');
+            toast.warning('Trình duyệt của bạn không hỗ trợ định vị GPS.');
             return;
         }
+
         navigator.geolocation.getCurrentPosition(
             async (pos) => {
                 const lat = pos.coords.latitude;
@@ -133,7 +139,7 @@ export default function CreateBatchOrder() {
                         longitude: lng
                     }));
                     
-                    alert('Đã cập nhật vị trí địa chỉ & tọa độ GPS thành công vào Hồ Sơ Kho!');
+                    toast.success('Đã cập nhật vị trí địa chỉ & tọa độ GPS thành công vào Hồ Sơ Kho!');
                 } catch (err) {
                     console.error('Lỗi định vị vị trí hoặc cập nhật GPS:', err);
                     const fallback = `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
@@ -141,9 +147,10 @@ export default function CreateBatchOrder() {
                 }
             },
             (() => {
-                alert('Không thể truy cập GPS thiết bị. Vui lòng cấp quyền vị trí.');
+                toast.error('Không thể truy cập GPS thiết bị. Vui lòng cấp quyền vị trí.');
             })
         );
+
     };
 
     // Tổng nguồn gốc
@@ -163,21 +170,28 @@ export default function CreateBatchOrder() {
                 carrierId:       form.carrierId,
                 buyer:           selectedFactory?.id || form.buyer,
                 deliveryDate:    form.deliveryDate,
-                transportType:   form.transportType,
-                unitPrice:       parseFloat(form.unitPrice),
+                transportType:   transportType || 'RENATS_DRIVER',
+                unitPrice:       null,
                 sourceRatio:     form.sourceRatio
             };
 
             await depotService.createBatchOrder(payload);
+            toast.success('Xuất lô hàng thành công!');
             navigate('/kho/dashboard');
         } catch (err) {
             // Dev mode fallback
             console.warn('API error (dev mode):', err.message);
+            toast.error('Đã xảy ra lỗi khi tạo lô hàng, hoặc hệ thống đang chạy ở chế độ offline.');
             navigate('/kho/dashboard');
         } finally {
             setLoading(false);
         }
+
     };
+
+    const selectedItem = inventoryList.find(item => item.type === form.wasteType);
+    const isWeightInvalid = selectedItem && parseFloat(form.totalKg) > selectedItem.current;
+
 
     return (
         <>
@@ -241,48 +255,32 @@ export default function CreateBatchOrder() {
                                     <div className="grid grid-cols-3 gap-3">
                                         {inventoryList.map(item => {
                                             const active = form.wasteType === item.type;
-                                            // Kiểm tra xem loại vật liệu này đã có lô đang hoạt động chưa
-                                            const isListed = activeMaterialTypes.some(t =>
-                                                t.toUpperCase() === (item.key || '').toUpperCase()
-                                            );
                                             return (
                                                 <button key={item.type} type="button"
-                                                    onClick={() => !isListed && handleSelectWasteType(item.type)}
-                                                    disabled={isListed}
-                                                    title={isListed ? 'Loại này đang có lô đăng bán rồi' : ''}
+                                                    onClick={() => handleSelectWasteType(item.type)}
                                                     className={`p-4 rounded-xl border text-left transition-all relative
-                                                        ${isListed ? 'border-amber-300 bg-amber-50 cursor-not-allowed opacity-70'
-                                                            : active ? 'border-green-600 bg-green-50/50'
+                                                        ${active ? 'border-green-600 bg-green-50/50'
                                                             : 'border-slate-200 hover:bg-slate-50'}`}>
-                                                    {isListed && (
-                                                        <span className="absolute top-2 right-2 text-xs font-bold bg-amber-400 text-white px-1.5 py-0.5 rounded-md">Đã đăng</span>
-                                                    )}
                                                     <p className="text-xs text-slate-400 font-semibold uppercase">TỒN: {item.current} kg</p>
                                                     <p className="font-bold text-slate-800 text-sm mt-1">{item.type}</p>
-                                                    {isListed && <p className="text-xs text-amber-600 mt-1">Đang có lô đăng bán</p>}
                                                 </button>
                                             );
                                         })}
                                     </div>
-                                    {activeMaterialTypes.length > 0 && (
-                                        <p className="text-xs text-amber-600 mt-2 flex items-center gap-1">
-                                            <span>⚠️</span> Loại phế liệu đã có lô đang đăng bán sẽ bị khóa để tránh đăng trùng.
+
+                                </div>
+
+                                <div>
+                                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Tổng khối lượng đóng lô (kg)</label>
+                                    <input type="number" placeholder="Nhập số kg đóng lô..." value={form.totalKg} onChange={e => updateForm('totalKg', e.target.value)}
+                                        className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-green-600" />
+                                    {isWeightInvalid && (
+                                        <p className="text-xs text-red-500 mt-2 flex items-center gap-1 font-semibold">
+                                            <span>⚠️</span> Khối lượng đóng lô không được vượt quá số lượng tồn kho ({selectedItem.current} kg)
                                         </p>
                                     )}
                                 </div>
 
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div>
-                                        <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Tổng khối lượng đóng lô (kg)</label>
-                                        <input type="number" placeholder="Nhập số kg đóng lô..." value={form.totalKg} onChange={e => updateForm('totalKg', e.target.value)}
-                                            className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-green-600" />
-                                    </div>
-                                    <div>
-                                        <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Đơn giá mong muốn (đ/kg)</label>
-                                        <input type="number" value={form.unitPrice} onChange={e => updateForm('unitPrice', e.target.value)}
-                                            className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-green-600" />
-                                    </div>
-                                </div>
 
                                 <div>
                                     <div className="flex justify-between items-center mb-2">
@@ -374,27 +372,39 @@ export default function CreateBatchOrder() {
                                     <span className="text-slate-500">Vị trí trong kho:</span>
                                     <span className="font-bold text-slate-800">{form.location}</span>
                                 </div>
-                                <div className="flex justify-between text-sm">
-                                    <span className="text-slate-500">Đơn giá ước tính:</span>
-                                    <span className="font-bold text-slate-800">{vnd(parseInt(form.unitPrice || 0))} / kg</span>
-                                </div>
-                                <div className="border-t border-slate-200 pt-3 flex justify-between text-base font-extrabold">
-                                    <span className="text-slate-700">Giá trị lô hàng ước tính:</span>
-                                    <span className="text-green-700">{vnd(parseFloat(form.totalKg || 0) * parseInt(form.unitPrice || 0))}</span>
+                                <div className="flex justify-between text-sm border-t border-slate-200 pt-3">
+                                    <span className="text-slate-500">Đơn giá:</span>
+                                    <span className="font-bold text-slate-600 italic">Chờ nhà máy đặt giá</span>
                                 </div>
                             </div>
+
 
                             {/* ── Chọn nhà máy nhận lô ─────────────────── */}
                             <div>
                                 <div className="flex items-center justify-between mb-3">
                                     <div>
                                         <p className="font-bold text-slate-800 text-sm">Nhà máy tái chế nhận lô</p>
-                                        <p className="text-xs text-slate-400 mt-0.5">Chọn nhà máy phù hợp với loại phế liệu, gần kho bạn nhất</p>
+                                        <p className="text-xs text-slate-400 mt-0.5">
+                                            {form.materialTypeKey
+                                                ? <>Chỉ hiển thị nhà máy nhận <strong className="text-green-700">{form.wasteType}</strong>, sắp xếp gần kho nhất</>
+                                                : 'Vui lòng quay lại bước 1 để chọn loại phế liệu trước'}
+                                        </p>
                                     </div>
                                     <button
                                         type="button"
-                                        onClick={() => setShowFactoryPicker(true)}
-                                        className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white text-sm font-semibold px-4 py-2 rounded-xl transition shadow-sm"
+                                        onClick={() => {
+                                            if (!form.materialTypeKey) {
+                                                alert('Vui lòng quay lại Bước 1 để chọn loại phế liệu trước khi chọn nhà máy!');
+                                                return;
+                                            }
+                                            setShowFactoryPicker(true);
+                                        }}
+                                        disabled={!form.materialTypeKey}
+                                        className={`flex items-center gap-2 text-sm font-semibold px-4 py-2 rounded-xl transition shadow-sm ${
+                                            form.materialTypeKey
+                                                ? 'bg-green-600 hover:bg-green-700 text-white'
+                                                : 'bg-slate-200 text-slate-400 cursor-not-allowed'
+                                        }`}
                                     >
                                         <span className="material-symbols-outlined text-base">factory</span>
                                         {selectedFactory ? 'Đổi nhà máy' : 'Chọn nhà máy'}
@@ -439,9 +449,53 @@ export default function CreateBatchOrder() {
                                 )}
                             </div>
 
-                            <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
-                                <p className="text-xs font-bold text-amber-700">⏳ Phương thức vận chuyển</p>
-                                <p className="text-xs text-amber-600 mt-1">Bạn sẽ chọn phương thức vận chuyển <strong>sau khi nhà máy xác nhận</strong> mua lô hàng này.</p>
+                            {/* ── Chọn phương thức vận chuyển ─────────────── */}
+                            <div>
+                                <p className="font-bold text-slate-800 text-sm mb-3">Phương thức vận chuyển</p>
+                                <div className="grid grid-cols-2 gap-3">
+                                    <button
+                                        type="button"
+                                        onClick={() => setTransportType('RENATS_DRIVER')}
+                                        className={`p-4 rounded-2xl border-2 text-left transition-all ${
+                                            transportType === 'RENATS_DRIVER'
+                                                ? 'border-green-500 bg-green-50 shadow-sm'
+                                                : 'border-slate-200 hover:border-slate-300 bg-white'
+                                        }`}
+                                    >
+                                        <div className="text-2xl mb-2">🚛</div>
+                                        <p className="font-bold text-slate-800 text-sm">Tài xế Re-Nats</p>
+                                        <p className="text-xs text-slate-500 mt-1">Hệ thống điều phối tài xế đến lấy hàng</p>
+                                        {transportType === 'RENATS_DRIVER' && (
+                                            <span className="mt-2 inline-block text-[10px] font-bold bg-green-600 text-white px-2 py-0.5 rounded-full">✓ Đã chọn</span>
+                                        )}
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => setTransportType('DEPOT_SELF')}
+                                        className={`p-4 rounded-2xl border-2 text-left transition-all ${
+                                            transportType === 'DEPOT_SELF'
+                                                ? 'border-blue-500 bg-blue-50 shadow-sm'
+                                                : 'border-slate-200 hover:border-slate-300 bg-white'
+                                        }`}
+                                    >
+                                        <div className="text-2xl mb-2">🏪</div>
+                                        <p className="font-bold text-slate-800 text-sm">Kho tự vận chuyển</p>
+                                        <p className="text-xs text-slate-500 mt-1">Dùng phương tiện riêng của kho</p>
+                                        {transportType === 'DEPOT_SELF' && (
+                                            <span className="mt-2 inline-block text-[10px] font-bold bg-blue-600 text-white px-2 py-0.5 rounded-full">✓ Đã chọn</span>
+                                        )}
+                                    </button>
+                                </div>
+                                {!transportType && (
+                                    <p className="text-xs text-amber-600 mt-2 flex items-center gap-1">
+                                        <span>⚠️</span> Vui lòng chọn phương thức vận chuyển
+                                    </p>
+                                )}
+                                {transportType === 'RENATS_DRIVER' && (
+                                    <p className="text-xs text-green-700 mt-2 flex items-center gap-1">
+                                        <span>ℹ️</span> Tài xế sẽ được điều phối sau khi nhà máy xác nhận mua lô hàng
+                                    </p>
+                                )}
                             </div>
                         </div>
                     )}
@@ -454,10 +508,19 @@ export default function CreateBatchOrder() {
                         </button>
 
                         {step < STEPS.length ? (
-                            <button type="button" disabled={step === 1 && !form.totalKg} onClick={() => setStep(s => s + 1)}
-                                className={`px-5 py-2.5 rounded-xl text-sm font-semibold text-white transition-all ${step === 1 && !form.totalKg ? 'bg-slate-300 cursor-not-allowed' : 'bg-green-600 hover:bg-green-700'}`}>
-                                Tiếp tục
+                            <button
+                                type="button"
+                                disabled={step === 1 && (!form.wasteType || !form.totalKg || isWeightInvalid)}
+                                onClick={() => setStep(s => s + 1)}
+                                className={`px-5 py-2.5 rounded-xl text-sm font-semibold text-white transition-all ${
+                                    step === 1 && (!form.wasteType || !form.totalKg || isWeightInvalid)
+                                        ? 'bg-slate-300 cursor-not-allowed'
+                                        : 'bg-green-600 hover:bg-green-700'
+                                }`}
+                            >
+                                {step === 1 && !form.wasteType ? 'Chọn loại phế liệu trước' : step === 1 && isWeightInvalid ? 'Vượt quá tồn kho' : step === 1 && !form.totalKg ? 'Nhập số kg trước' : 'Tiếp tục'}
                             </button>
+
                         ) : (
                             <button type="button" disabled={loading} onClick={handleFinish}
                                 className="px-6 py-3 rounded-xl text-sm font-bold text-white transition-all bg-green-600 hover:bg-green-700">

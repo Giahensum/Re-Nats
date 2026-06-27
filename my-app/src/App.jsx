@@ -33,6 +33,7 @@ import PremiumMarket from './features/recycling_businesses/premiumMarket';
 import OrderProcess from './features/recycling_businesses/orderProcess';
 import OrderConfirm from './features/recycling_businesses/orderConfirm';
 import OrderTracking from './features/recycling_businesses/orderTracking';
+import OrderSettlement from './features/recycling_businesses/orderSettlement';
 import FactoryProfileSetup from './features/recycling_businesses/FactoryProfileSetup';
 import FactoryProfileGuard from './app/FactoryProfileGuard';
 
@@ -102,6 +103,7 @@ function App() {
           <Route path="/recycle/order-process" element={<P roles={['FACTORY']}><FactoryProfileGuard><OrderProcess /></FactoryProfileGuard></P>} />
           <Route path="/recycle/order-confirm" element={<P roles={['FACTORY']}><FactoryProfileGuard><OrderConfirm /></FactoryProfileGuard></P>} />
           <Route path="/recycle/order-tracking" element={<P roles={['FACTORY']}><FactoryProfileGuard><OrderTracking /></FactoryProfileGuard></P>} />
+          <Route path="/recycle/order-settlement" element={<P roles={['FACTORY']}><FactoryProfileGuard><OrderSettlement /></FactoryProfileGuard></P>} />
 
           {/* ── DRIVER (Tài xế) routes ── */}
           <Route path="/transport/market" element={<P roles={['DRIVER']}><TransportationMarketplace /></P>} />

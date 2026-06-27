@@ -65,50 +65,16 @@ const OrderTracking = () => {
       const data = await factoryService.getOrders();
       if (data && data.length > 0) {
         setOrders(data);
-        // Chọn mặc định đơn hàng đầu tiên
         loadOrderDetail(data[0].id);
       } else {
-        // Mock fallback nếu database trống
-        const mockOrders = [
-          {
-            id: 'ord-shopee-1',
-            batchCode: 'BATCH-2601',
-            materialType: 'CARDBOARD',
-            depotName: 'Vựa Phế Liệu Minh Khôi',
-            agreedPrice: 3200,
-            totalAmount: 40000000,
-            status: 'IN_PROGRESS',
-            transportStatus: 'ON_THE_WAY',
-            createdAt: new Date().toISOString()
-          },
-          {
-            id: 'ord-tiktok-2',
-            batchCode: 'BATCH-2602',
-            materialType: 'HDPE',
-            depotName: 'Đại Lý Thu Gom Thành Đạt',
-            agreedPrice: 15000,
-            totalAmount: 126000000,
-            status: 'ACCEPTED',
-            transportStatus: 'ASSIGNED',
-            createdAt: new Date(Date.now() - 3600000).toISOString()
-          },
-          {
-            id: 'ord-verified-3',
-            batchCode: 'BATCH-2500',
-            materialType: 'PAPER',
-            depotName: 'Vựa Phế Liệu Minh Khôi',
-            agreedPrice: 2800,
-            totalAmount: 41580000,
-            status: 'VERIFIED',
-            transportStatus: 'DELIVERED',
-            createdAt: new Date(Date.now() - 86400000 * 2).toISOString()
-          }
-        ];
-        setOrders(mockOrders);
-        loadOrderDetail(mockOrders[0].id, mockOrders);
+        setOrders([]);
+        setSelectedOrder(null);
       }
     } catch (err) {
       console.error(err);
+      setOrders([]);
+      setSelectedOrder(null);
+    } finally {
       setLoading(false);
     }
   };
@@ -118,62 +84,11 @@ const OrderTracking = () => {
       const detail = await factoryService.getOrderDetail(id);
       if (detail) {
         setSelectedOrder(detail);
+      } else {
+        setSelectedOrder(null);
       }
     } catch {
-      // Mock detail fallback
-      const currentList = fallbackList || orders;
-      const base = currentList.find(o => o.id === id) || currentList[0];
-      const isFirst = base.batchCode.includes('2601') || base.batchCode.includes('2500');
-      
-      const mockDetail = {
-        id: base.id,
-        status: base.status,
-        agreedPrice: base.agreedPrice,
-        totalAmount: base.totalAmount,
-        createdAt: base.createdAt,
-        batch: {
-          batchCode: base.batchCode,
-          materialType: base.materialType,
-          estimatedWeightKg: base.materialType === 'CARDBOARD' ? 12500 : 8400,
-          actualWeightKg: base.status === 'VERIFIED' ? 14850 : null,
-          unitPrice: base.agreedPrice,
-          description: base.materialType === 'CARDBOARD' 
-            ? 'Bao bì carton sóng thu gom từ vựa.' 
-            : 'Nhựa HDPE phân loại, đóng kiện thô.',
-          thumbnailImageUrl: base.materialType === 'CARDBOARD'
-            ? 'https://images.unsplash.com/photo-1530587191325-3db32d826c18?w=800'
-            : 'https://images.unsplash.com/photo-1611284446314-60a58ac0deb9?w=800',
-          depot: {
-            companyName: base.depotName,
-            address: isFirst ? '45 Đường Số 9, Phường Long Bình, Quận 9' : '12 Linh Đông, TP. Thủ Đức',
-            city: 'TP. Hồ Chí Minh',
-            reputationScore: isFirst ? 92 : 78
-          }
-        },
-        transport: {
-          id: 'job-' + base.id,
-          status: base.transportStatus,
-          pickupAddress: isFirst 
-            ? 'Điểm tập kết phế liệu Quận 9, TP.HCM' 
-            : 'Kho trung chuyển phế liệu Thủ Đức, TP.HCM',
-          deliveryAddress: isFirst ? '45 Đường Số 9, Phường Long Bình, Quận 9' : '12 Linh Đông, TP. Thủ Đức',
-          vehiclePlate: '51C-882.91',
-          driverName: 'Nguyễn Văn Minh',
-          trackingLogs: base.status === 'VERIFIED' ? [
-            { id: '1', note: 'Tài xế check-in cổng Kho điểm tập kết', createdAt: new Date(Date.now() - 3600000 * 5).toISOString(), latitude: 10.7876, longitude: 106.6346 },
-            { id: '2', note: 'Xác thực hồ sơ thu gom thành công', createdAt: new Date(Date.now() - 3600000 * 4.5).toISOString(), latitude: 10.7876, longitude: 106.6346 },
-            { id: '3', note: 'Check-out Kho thu gom. Xe di chuyển về vựa', createdAt: new Date(Date.now() - 3600000 * 4).toISOString(), latitude: 10.795, longitude: 106.645 },
-            { id: '4', note: 'Check-in tại Vựa Phế Liệu Minh Khôi', createdAt: new Date(Date.now() - 3600000 * 3).toISOString(), latitude: 10.8231, longitude: 106.6297 },
-            { id: '5', note: 'Chốt xuất kho vựa. Vận chuyển về nhà máy', createdAt: new Date(Date.now() - 3600000 * 2).toISOString(), latitude: 10.8231, longitude: 106.6297 },
-            { id: '6', note: 'Xe cập bến trạm bảo vệ nhà máy Re-Nats. Check-in cổng', createdAt: new Date(Date.now() - 3600000 * 1).toISOString(), latitude: 10.8812, longitude: 106.5123 }
-          ] : (base.status === 'IN_PROGRESS' ? [
-            { id: '1', note: 'Tài xế check-in cổng Kho điểm tập kết', createdAt: new Date(Date.now() - 3600000 * 2).toISOString(), latitude: isFirst ? 10.7876 : 10.8524, longitude: isFirst ? 106.6346 : 106.7582 },
-            { id: '2', note: 'Xác thực hồ sơ thành công', createdAt: new Date(Date.now() - 3600000 * 1.5).toISOString(), latitude: isFirst ? 10.7876 : 10.8524, longitude: isFirst ? 106.6346 : 106.7582 },
-            { id: '3', note: 'Check-out kho trung chuyển. Đang di chuyển', createdAt: new Date(Date.now() - 3600000).toISOString(), latitude: isFirst ? 10.805 : 10.835, longitude: isFirst ? 106.632 : 106.74 }
-          ] : [])
-        }
-      };
-      setSelectedOrder(mockDetail);
+      setSelectedOrder(null);
     } finally {
       setLoading(false);
     }
@@ -207,8 +122,8 @@ const OrderTracking = () => {
     switch (status) {
       case 'ACCEPTED': return 'Đã nhận thầu';
       case 'IN_PROGRESS': return 'Đang vận chuyển';
-      case 'DELIVERED': return 'Chờ cân KCS';
-      case 'VERIFIED': return 'Đã xác thực KCS';
+      case 'DELIVERED': return 'Chờ cân nghiệm thu';
+      case 'VERIFIED': return 'Đã xác thực cân';
       default: return status;
     }
   };
@@ -267,7 +182,7 @@ const OrderTracking = () => {
         payload.longitude = (depotLoc[1] + endLoc[1]) / 2;
         break;
       case 'checkin_factory':
-        payload.note = `[Check-in Nhà Máy] Xe cập cổng bảo vệ Nhà máy Re-Nats Long An. Chờ cân KCS.`;
+        payload.note = `[Check-in Nhà Máy] Xe cập cổng bảo vệ Nhà máy Re-Nats Long An. Chờ cân nghiệm thu.`;
         payload.latitude = endLoc[0];
         payload.longitude = endLoc[1];
         break;
@@ -309,6 +224,59 @@ const OrderTracking = () => {
     return [start, depot, end];
   };
 
+  const getLogForStep = (stepKey) => {
+    if (!selectedOrder?.transport?.trackingLogs) return null;
+    return selectedOrder.transport.trackingLogs.find(l => {
+      const noteLower = l.note?.toLowerCase() || '';
+      const typeLower = l.logType?.toLowerCase() || '';
+      
+      if (stepKey === 'checkin_shopee') {
+        return noteLower.includes('check-in cổng kho') || noteLower.includes('checkin_shopee') || typeLower.includes('shopee') || typeLower.includes('intermediate') && noteLower.includes('checkin') || typeLower.includes('checkin_intermediate');
+      }
+      if (stepKey === 'checkout_shopee') {
+        return noteLower.includes('xác thực') || noteLower.includes('checkout_shopee') || typeLower.includes('shopee') || typeLower.includes('intermediate') && noteLower.includes('checkout') || typeLower.includes('checkout_intermediate');
+      }
+      if (stepKey === 'checkin_depot') {
+        return noteLower.includes('check-in tại vựa') || noteLower.includes('checkin_depot') || typeLower.includes('depot') && noteLower.includes('checkin') || typeLower.includes('checkin_depot');
+      }
+      if (stepKey === 'checkout_depot') {
+        return noteLower.includes('chốt xuất kho vựa') || noteLower.includes('checkout_depot') || typeLower.includes('depot') && noteLower.includes('checkout') || typeLower.includes('checkout_depot');
+      }
+      if (stepKey === 'checkin_factory') {
+        return noteLower.includes('checkin_factory') || typeLower.includes('factory');
+      }
+      return false;
+    });
+  };
+
+  const renderEvidencePhoto = (stepKey, defaultImages = []) => {
+    const log = getLogForStep(stepKey);
+    if (!log) return null;
+    
+    const imgUrl = log.imageUrl || defaultImages[0];
+    
+    return (
+      <div className="mt-3 flex gap-3 flex-wrap">
+        {imgUrl && (
+          <div className="relative w-32 h-24 rounded-lg overflow-hidden border border-slate-200 shadow-sm group/img cursor-pointer" onClick={() => window.open(imgUrl, '_blank')}>
+            <img src={imgUrl} alt="Evidence image" className="object-cover w-full h-full hover:scale-105 transition-all" />
+            <span className="absolute bottom-0 inset-x-0 bg-black/60 text-white text-[8px] text-center font-bold py-0.5">ẢNH MINH CHỨNG EPR</span>
+          </div>
+        )}
+        {log.imageUrl && defaultImages[1] && (
+          <div className="relative w-32 h-24 rounded-lg overflow-hidden border border-slate-200 shadow-sm group/img cursor-pointer" onClick={() => window.open(defaultImages[1], '_blank')}>
+            <img src={defaultImages[1]} alt="Evidence image 2" className="object-cover w-full h-full hover:scale-105 transition-all" />
+            <span className="absolute bottom-0 inset-x-0 bg-black/60 text-white text-[8px] text-center font-bold py-0.5">ẢNH THÙNG XE</span>
+          </div>
+        )}
+        <div className="flex-1 min-w-[200px] text-xs text-slate-500 bg-slate-50 p-2.5 rounded-lg border border-slate-100 flex flex-col justify-between">
+          <span className="italic">" {log.note || 'Tài xế đã ghi nhận check-in/check-out phân đoạn này.'} "</span>
+          <span className="text-[10px] text-slate-400 font-semibold mt-1">📍 GPS: {log.latitude}, {log.longitude} • Lúc: {new Date(log.createdAt).toLocaleTimeString('vi-VN')} {new Date(log.createdAt).toLocaleDateString('vi-VN')}</span>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="font-sans text-slate-900 bg-slate-50 min-h-screen flex flex-col overflow-x-hidden">
       {/* Leaflet CSS Inject */}
@@ -343,7 +311,7 @@ const OrderTracking = () => {
                 onClick={() => setActiveFilter('DELIVERED')}
                 className={`flex-1 py-2 text-center rounded-lg transition-all ${activeFilter === 'DELIVERED' ? 'bg-white text-green-700 shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}
               >
-                Chờ KCS
+                Chờ trạm cân
               </button>
               <button 
                 onClick={() => setActiveFilter('VERIFIED')}
@@ -538,7 +506,7 @@ const OrderTracking = () => {
                   {/* Step 1: Origin Check-in */}
                   <div className="relative">
                     <span className={`absolute -left-[41px] top-0 h-6 w-6 rounded-full flex items-center justify-center ring-4 ring-white ${
-                      selectedOrder.transport?.trackingLogs?.some(l => l.note.includes('check-in cổng Kho'))
+                      getLogForStep('checkin_shopee')
                         ? 'bg-green-600 text-white' : 'bg-slate-200 text-slate-400'
                     }`}>
                       <span className="material-symbols-outlined text-[14px]">login</span>
@@ -549,27 +517,17 @@ const OrderTracking = () => {
                         <span className="text-xs text-slate-400 font-semibold">Bắt buộc</span>
                       </div>
                       <p className="text-xs text-slate-500 mt-1">Xe tải cập bến kho bãi nguồn để bốc xếp phế liệu lên thùng xe.</p>
-                      
-                      {/* Photo evidence mock */}
-                      {selectedOrder.transport?.trackingLogs?.some(l => l.note.includes('check-in cổng Kho')) && (
-                        <div className="mt-3 flex gap-3">
-                          <div className="relative w-24 h-16 rounded-lg overflow-hidden border border-slate-200">
-                            <img src="https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?w=150" alt="Xe tai checkin" className="object-cover w-full h-full" />
-                            <span className="absolute bottom-0 inset-x-0 bg-black/60 text-white text-[8px] text-center font-bold">ẢNH BIỂN SỐ XE</span>
-                          </div>
-                          <div className="relative w-24 h-16 rounded-lg overflow-hidden border border-slate-200">
-                            <img src="https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?w=150" alt="Thung xe trong" className="object-cover w-full h-full" />
-                            <span className="absolute bottom-0 inset-x-0 bg-black/60 text-white text-[8px] text-center font-bold">THÙNG XE TRỐNG</span>
-                          </div>
-                        </div>
-                      )}
+                      {renderEvidencePhoto('checkin_shopee', [
+                        "https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?w=150",
+                        "https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?w=150"
+                      ])}
                     </div>
                   </div>
 
                   {/* Step 2: Origin Check-out */}
                   <div className="relative">
                     <span className={`absolute -left-[41px] top-0 h-6 w-6 rounded-full flex items-center justify-center ring-4 ring-white ${
-                      selectedOrder.transport?.trackingLogs?.some(l => l.note.includes('Xác thực'))
+                      getLogForStep('checkout_shopee')
                         ? 'bg-green-600 text-white' : 'bg-slate-200 text-slate-400'
                     }`}>
                       <span className="material-symbols-outlined text-[14px]">logout</span>
@@ -577,13 +535,16 @@ const OrderTracking = () => {
                     <div>
                       <h4 className="font-bold text-slate-800 text-sm">Phân đoạn 2: Check-out Điểm tập kết phế liệu</h4>
                       <p className="text-xs text-slate-500 mt-1">Xác thực sản lượng và niêm phong thùng xe, xe lăn bánh hướng về vựa gom.</p>
+                      {renderEvidencePhoto('checkout_shopee', [
+                        "https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?w=150"
+                      ])}
                     </div>
                   </div>
 
                   {/* Step 3: Depot Check-in */}
                   <div className="relative">
                     <span className={`absolute -left-[41px] top-0 h-6 w-6 rounded-full flex items-center justify-center ring-4 ring-white ${
-                      selectedOrder.transport?.trackingLogs?.some(l => l.note.includes('Check-in tại Vựa'))
+                      getLogForStep('checkin_depot')
                         ? 'bg-green-600 text-white' : 'bg-slate-200 text-slate-400'
                     }`}>
                       <span className="material-symbols-outlined text-[14px]">local_shipping</span>
@@ -591,13 +552,16 @@ const OrderTracking = () => {
                     <div>
                       <h4 className="font-bold text-slate-800 text-sm">Phân đoạn 3: Check-in Vựa đối tác ({selectedOrder.batch.depot.companyName})</h4>
                       <p className="text-xs text-slate-500 mt-1">Hạ tải phế liệu thô xuống trạm cân trung chuyển của vựa để ép kiện chặt tiêu chuẩn.</p>
+                      {renderEvidencePhoto('checkin_depot', [
+                        "https://images.unsplash.com/photo-1553413077-190dd305871c?w=150"
+                      ])}
                     </div>
                   </div>
 
                   {/* Step 4: Depot Check-out */}
                   <div className="relative">
                     <span className={`absolute -left-[41px] top-0 h-6 w-6 rounded-full flex items-center justify-center ring-4 ring-white ${
-                      selectedOrder.transport?.trackingLogs?.some(l => l.note.includes('Chốt xuất kho vựa'))
+                      getLogForStep('checkout_depot')
                         ? 'bg-green-600 text-white' : 'bg-slate-200 text-slate-400'
                     }`}>
                       <span className="material-symbols-outlined text-[14px]">scale</span>
@@ -605,13 +569,16 @@ const OrderTracking = () => {
                     <div>
                       <h4 className="font-bold text-slate-800 text-sm">Phân đoạn 4: Check-out Vựa (Lên kiện nén về Nhà máy)</h4>
                       <p className="text-xs text-slate-500 mt-1">Xuất xưởng kiện nén sạch. Tài xế chụp phiếu cân của vựa đối tác.</p>
+                      {renderEvidencePhoto('checkout_depot', [
+                        "https://images.unsplash.com/photo-1565793298595-6a879b1d9492?w=150"
+                      ])}
                     </div>
                   </div>
 
                   {/* Step 5: Factory Check-in */}
                   <div className="relative">
                     <span className={`absolute -left-[41px] top-0 h-6 w-6 rounded-full flex items-center justify-center ring-4 ring-white ${
-                      selectedOrder.status === 'DELIVERED' || selectedOrder.status === 'VERIFIED'
+                      selectedOrder.status === 'DELIVERED' || selectedOrder.status === 'VERIFIED' || getLogForStep('checkin_factory')
                         ? 'bg-green-600 text-white' : 'bg-slate-200 text-slate-400'
                     }`}>
                       <span className="material-symbols-outlined text-[14px]">domain</span>
@@ -619,6 +586,9 @@ const OrderTracking = () => {
                     <div>
                       <h4 className="font-bold text-slate-800 text-sm">Phân đoạn 5: Check-in Cổng Nhà Máy Re-Nats</h4>
                       <p className="text-xs text-slate-500 mt-1">Xe tải dừng tại trạm bảo vệ, quét biển số và đối chiếu mã lô số hóa.</p>
+                      {renderEvidencePhoto('checkin_factory', [
+                        "https://images.unsplash.com/photo-1527018601619-a508a2be00cd?w=150"
+                      ])}
                     </div>
                   </div>
 
@@ -630,18 +600,24 @@ const OrderTracking = () => {
                       <span className="material-symbols-outlined text-[14px]">workspace_premium</span>
                     </span>
                     <div>
-                      <h4 className="font-bold text-slate-800 text-sm">Phân đoạn 6: Nghiệm thu KCS &amp; Chốt khối lượng thực tế</h4>
-                      <p className="text-xs text-slate-500 mt-1">Hoàn tất kiểm định độ ẩm, độ lẫn tạp chất, chốt hóa đơn thanh toán &amp; cấp chứng chỉ số.</p>
+                      <h4 className="font-bold text-slate-800 text-sm">Phân đoạn 6: Nghiệm thu &amp; Chốt khối lượng thực tế</h4>
+                      <p className="text-xs text-slate-500 mt-1">Hoàn tất kiểm định độ ẩm, độ lẫn tạp chất và chốt hóa đơn thanh toán.</p>
                       
                       {selectedOrder.status === 'VERIFIED' && (
                         <div className="mt-3 bg-green-50/50 border border-green-200 rounded-xl p-4 flex flex-col md:flex-row justify-between gap-4">
                           <div>
                             <p className="text-xs text-slate-500 font-bold uppercase">Khối lượng cân chốt</p>
-                            <p className="text-base font-extrabold text-slate-800">14.850 kg (Thực tế)</p>
-                            <p className="text-[10px] text-slate-400 mt-0.5">Sai lệch: -1.2% (Trong ngưỡng cho phép)</p>
+                            <p className="text-base font-extrabold text-slate-800">
+                              {(selectedOrder.batch.actualWeightKg ?? selectedOrder.batch.estimatedWeightKg)?.toLocaleString('vi-VN')} kg (Thực tế)
+                            </p>
+                            {selectedOrder.batch.actualWeightKg && (
+                              <p className="text-[10px] text-slate-400 mt-0.5">
+                                Sai lệch: {(((selectedOrder.batch.actualWeightKg - selectedOrder.batch.estimatedWeightKg) / selectedOrder.batch.estimatedWeightKg) * 100).toFixed(1)}% (Trong ngưỡng cho phép)
+                              </p>
+                            )}
                           </div>
                           <div>
-                            <p className="text-xs text-slate-500 font-bold uppercase">Chất lượng KCS</p>
+                            <p className="text-xs text-slate-500 font-bold uppercase">Chất lượng kiểm nghiệm</p>
                             <p className="text-base font-extrabold text-slate-800">Độ ẩm: 8% • Tạp chất: 3.2%</p>
                             <p className="text-[10px] text-slate-400 mt-0.5">Hàng loại A đạt chuẩn chất lượng</p>
                           </div>
@@ -734,14 +710,14 @@ const OrderTracking = () => {
                           <span className="material-symbols-outlined text-base">verified</span>
                           ĐÃ CHECK-IN TẠI CỔNG NHÀ MÁY
                         </h5>
-                        <p className="text-xs text-slate-400 mt-0.5">Xe đang chờ tại trạm cân KCS. Bạn có muốn duyệt KCS và chốt hóa đơn ngay lập tức?</p>
+                        <p className="text-xs text-slate-400 mt-0.5">Xe đang chờ tại trạm cân. Bạn có muốn duyệt kiểm nghiệm và chốt hóa đơn ngay lập tức?</p>
                       </div>
                       <Link
-                        to="/recycle/order-process"
+                        to={`/recycle/order-process?orderId=${selectedOrder.id}`}
                         className="bg-green-600 hover:bg-green-500 text-white font-bold text-xs px-4 py-2 rounded-xl transition-all shadow-md shrink-0 flex items-center gap-1.5"
                       >
                         <span className="material-symbols-outlined text-base">scale</span>
-                        Đi tới Trạm Cân KCS
+                        Đi tới Trạm Cân
                       </Link>
                     </div>
                   )}
