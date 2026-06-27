@@ -370,7 +370,7 @@ const MapVip = () => {
                                                 </div>
                                                 {depot.reputationScore != null && (
                                                     <span className="bg-white/20 text-white text-xs font-bold px-2 py-1 rounded-lg backdrop-blur-sm">
-                                                        ★ {depot.reputationScore}/100
+                                                        VIP
                                                     </span>
                                                 )}
                                             </div>

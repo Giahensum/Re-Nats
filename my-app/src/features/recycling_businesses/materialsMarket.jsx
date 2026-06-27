@@ -123,7 +123,7 @@ const MaterialsMarket = () => {
                             <span className="material-symbols-outlined text-emerald-600 text-2xl">workspace_premium</span>
                             <div>
                                 <p className="text-sm font-extrabold text-emerald-800">Đã kích hoạt Chế độ Premium</p>
-                                <p className="text-xs text-emerald-600 mt-0.5">Tự động mở khóa toàn bộ lịch sử giao dịch và điểm kiểm định chất lượng của đối tác vựa.</p>
+                                <p className="text-xs text-emerald-600 mt-0.5">Tự động mở khóa toàn bộ lịch sử giao dịch và kết quả kiểm nghiệm chất lượng của đối tác vựa.</p>
                             </div>
                         </div>
                     )}
@@ -189,10 +189,10 @@ const MaterialsMarket = () => {
                                                         className="text-sm font-semibold text-slate-500">Tấn</span></p>
                                                 </div>
                                                 <div className="bg-green-50 p-3 rounded-xl border border-green-100 relative group">
-                                                    <p className="text-xs text-green-700 font-medium uppercase mb-1">Điểm uy tín</p>
+                                                    <p className="text-xs text-green-700 font-medium uppercase mb-1">Đơn giá đề xuất</p>
                                                     <div className="flex items-center gap-1">
-                                                        <span className="text-2xl font-extrabold text-green-700">{b.depot.reputationScore}</span>
-                                                        <span className="text-xs font-bold text-green-600">/100</span>
+                                                        <span className="text-lg font-extrabold text-green-700">{b.unitPrice?.toLocaleString('vi-VN')}</span>
+                                                        <span className="text-xs font-bold text-green-600"> ₫/kg</span>
                                                     </div>
                                                 </div>
                                             </div>

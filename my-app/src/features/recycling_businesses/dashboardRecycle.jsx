@@ -93,7 +93,7 @@ const DashboardRecycle = () => {
             case 'COMPLETED':
                 return (
                     <Link to={`/recycle/order-settlement?orderId=${orderId}`} className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-green-50 text-green-700 border border-green-200 hover:bg-green-100 transition-all shadow-sm">
-                        Đã KCS &amp; Chốt (Xem HĐ)
+                        Đã cân &amp; Chốt (Xem HĐ)
                     </Link>
                 );
             case 'REJECTED':
@@ -136,7 +136,7 @@ const DashboardRecycle = () => {
                 <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-8">
                     <div>
                         <h1 className="text-2xl font-bold text-slate-900">Tổng Quan Báo Cáo</h1>
-                        <p className="text-slate-500 text-sm mt-1">Số liệu trực quan thời gian thực từ trạm cân và KCS</p>
+                        <p className="text-slate-500 text-sm mt-1">Số liệu trực quan thời gian thực từ trạm cân</p>
                     </div>
                     <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
                         <span className="text-sm text-slate-500 bg-white px-3 py-1.5 rounded-md border border-slate-200 shadow-sm flex items-center gap-2 h-10 select-none">
@@ -145,7 +145,7 @@ const DashboardRecycle = () => {
                         </span>
                         <Link to="/recycle/order-process" className="bg-primary hover:bg-secondary text-white px-4 py-2 rounded-lg text-sm font-semibold shadow-sm flex items-center gap-2 transition-colors h-10">
                             <span className="material-symbols-outlined text-xl">scale</span>
-                            Trạm Cân KCS
+                            Trạm Cân
                         </Link>
                     </div>
                 </div>
@@ -190,7 +190,7 @@ const DashboardRecycle = () => {
                             <div>
                                 <p className="text-white font-bold text-base">Nâng cấp lên Re-Nats Premium</p>
                                 <p className="text-green-200 text-sm mt-0.5">
-                                    Mở khóa: <strong className="text-white">Bản đồ VIP</strong>, <strong className="text-white">Danh bạ đại lý</strong>, <strong className="text-white">Phân tích KCS nâng cao</strong> và nhiều hơn nữa.
+                                    Mở khóa: <strong className="text-white">Bản đồ VIP</strong>, <strong className="text-white">Danh bạ đại lý</strong>, <strong className="text-white">Phân tích chất lượng nâng cao</strong> và nhiều hơn nữa.
                                 </p>
                             </div>
                         </div>
@@ -234,7 +234,7 @@ const DashboardRecycle = () => {
                         <div className="absolute right-0 top-0 h-full w-1 bg-blue-500"></div>
                         <div className="flex justify-between items-start mb-4">
                             <div>
-                                <p className="text-slate-500 text-sm font-medium mb-1">Tỷ lệ Tạp Chất TB (KCS)</p>
+                                <p className="text-slate-500 text-sm font-medium mb-1">Tỷ lệ Tạp Chất TB</p>
                                 <h3 className="text-3xl font-bold text-slate-800">
                                     {kpis.avgImpurityRate.toFixed(1)} <span className="text-lg text-slate-400 font-normal">%</span>
                                 </h3>
@@ -451,7 +451,7 @@ const DashboardRecycle = () => {
                                         <th className="px-4 py-3 font-medium">Loại Nguyên Liệu</th>
                                         <th className="px-4 py-3 font-medium">Khối Lượng</th>
                                         <th className="px-4 py-3 font-medium">Thời Gian Nhận</th>
-                                        <th className="px-4 py-3 font-medium rounded-tr-lg text-right">Trạng Thái KCS</th>
+                                        <th className="px-4 py-3 font-medium rounded-tr-lg text-right">Trạng Thế Nghiệm Thu</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-slate-50">
@@ -494,7 +494,7 @@ const DashboardRecycle = () => {
                             <span className="material-symbols-outlined">warning</span>
                         </div>
                         <div>
-                            <p className="text-xs text-slate-500 font-semibold uppercase">Cảnh Báo KCS</p>
+                            <p className="text-xs text-slate-500 font-semibold uppercase">Cảnh Báo Chất Lượng</p>
                             <p className="font-bold text-slate-800">0 Cảnh Báo</p>
                         </div>
                     </div>

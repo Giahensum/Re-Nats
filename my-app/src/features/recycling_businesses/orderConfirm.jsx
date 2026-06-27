@@ -184,10 +184,7 @@ const OrderConfirm = () => {
                                 <span className="text-slate-500">Địa chỉ kho:</span>
                                 <span className="font-medium text-slate-700">{batch.depot.address}, {batch.depot.city}</span>
                             </div>
-                            <div className="mt-2 flex justify-between items-center text-sm">
-                                <span className="text-slate-500">Uy tín vựa:</span>
-                                <span className="font-extrabold text-green-700">{batch.depot.reputationScore} / 100 Điểm</span>
-                            </div>
+
                         </div>
 
                         {/* Interactive Bid Form */}

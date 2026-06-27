@@ -85,11 +85,11 @@ const InforPartnerVip = () => {
                                     <div className="flex flex-col items-end gap-2">
                                         <div className="flex items-center gap-2">
                                             <div className="text-right">
-                                                <p className="text-xs text-slate-500 uppercase font-semibold">Điểm uy tín</p>
-                                                <p className="text-2xl font-bold text-green-600">98/100</p>
+                                                <p className="text-xs text-slate-500 uppercase font-semibold">Lịch sử giao dịch</p>
+                                                <p className="text-2xl font-bold text-green-600">98 Chuyến</p>
                                             </div>
                                             <div className="h-12 w-12 rounded-full border-4 border-green-500 flex items-center justify-center bg-green-50">
-                                                <span className="material-symbols-outlined text-green-600 text-2xl">shield</span>
+                                                <span className="material-symbols-outlined text-green-600 text-2xl">local_shipping</span>
                                             </div>
                                         </div>
                                         <div className="flex items-center gap-1 text-xs text-slate-500 bg-slate-100 px-2 py-1 rounded">

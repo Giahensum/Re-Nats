@@ -10,6 +10,7 @@ public class Invoice
     public string? InvoiceFileUrl { get; set; }
     public decimal? Subtotal { get; set; }
     public decimal? VatAmount { get; set; }
+    public decimal? CommissionFee { get; set; }
     public decimal? TotalAmount { get; set; }
     public InvoiceStatus Status { get; set; } = InvoiceStatus.PENDING;
     public Guid? UploadedBy { get; set; }

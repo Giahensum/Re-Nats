@@ -91,6 +91,7 @@ const OrderSettlement = () => {
     const isPaid = order.invoice?.status === 'VERIFIED';
     const subtotal = order.invoice?.subtotal || 0;
     const vat = order.invoice?.vatAmount || 0;
+    const commissionFee = order.invoice?.commissionFee || 0;
     const totalAmount = order.invoice?.totalAmount || 0;
 
     return (
@@ -104,7 +105,7 @@ const OrderSettlement = () => {
                 <div className="mb-6 print:hidden">
                     <Link to="/recycle/order-process" className="inline-flex items-center gap-2 text-sm text-slate-600 hover:text-slate-900 font-semibold transition-colors">
                         <span className="material-symbols-outlined text-lg">arrow_back</span>
-                        Quay lại Trạm Cân KCS
+                        Quay lại Trạm Cân
                     </Link>
                 </div>
 
@@ -140,7 +141,7 @@ const OrderSettlement = () => {
                         <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6">
                             <div className="flex items-center gap-3 border-b border-slate-100 pb-4 mb-4">
                                 <span className="material-symbols-outlined text-green-700 text-2xl">scale</span>
-                                <h3 className="font-bold text-slate-800 text-base">Thông tin Trạm Cân KCS</h3>
+                                <h3 className="font-bold text-slate-800 text-base">Thông tin Trạm Cân &amp; Nghiệm Thu</h3>
                             </div>
                             
                             <div className="space-y-4">
@@ -167,7 +168,7 @@ const OrderSettlement = () => {
                                     </div>
                                     <div className="flex justify-between">
                                         <span className="text-slate-400">Trạm cân thực hiện:</span>
-                                        <span className="font-semibold text-slate-700">Trạm KCS Cổng Nam #04</span>
+                                        <span className="font-semibold text-slate-700">Trạm Cân Cổng Nam #04</span>
                                     </div>
                                     <div className="flex justify-between">
                                         <span className="text-slate-400">Hao hụt chất lượng:</span>
@@ -291,6 +292,12 @@ const OrderSettlement = () => {
                                         <span>Thuế giá trị gia tăng (VAT 8%):</span>
                                         <span className="font-semibold text-slate-800">{vnd(vat)}</span>
                                     </div>
+                                    {commissionFee > 0 && (
+                                        <div className="flex justify-between text-sm text-slate-500">
+                                            <span>Phí dịch vụ trung gian Re-Nats (3%):</span>
+                                            <span className="font-semibold text-slate-800">{vnd(commissionFee)}</span>
+                                        </div>
+                                    )}
                                     
                                     <div className="flex justify-between items-center bg-slate-900 text-white rounded-xl px-5 py-4 mt-2">
                                         <span className="font-bold text-base">Tổng cộng thanh toán:</span>
@@ -321,7 +328,7 @@ const OrderSettlement = () => {
 
                                 {/* Footer details */}
                                 <div className="text-center text-[10px] text-slate-400 border-t border-slate-100 pt-4">
-                                    Hóa đơn này được tạo tự động bởi Re-Nats Platform và có giá trị pháp lý KCS đối soát thuế bảo vệ môi trường EPR.
+                                    Hóa đơn này được tạo tự động bởi Re-Nats Platform và có giá trị pháp lý đối soát thuế bảo vệ môi trường EPR.
                                 </div>
                             </div>
                         </div>

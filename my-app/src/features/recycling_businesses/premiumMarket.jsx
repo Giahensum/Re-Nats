@@ -80,10 +80,10 @@ const PremiumMarket = () => {
                                             className="text-sm font-semibold text-slate-500">Tấn</span></p>
                                     </div>
                                     <div className="bg-green-50 p-3 rounded-xl border border-green-100">
-                                        <p className="text-xs text-green-700 font-medium uppercase mb-1">Điểm uy tín</p>
+                                        <p className="text-xs text-green-700 font-medium uppercase mb-1">Độ tinh khiết</p>
                                         <div className="flex items-center gap-1">
                                             <span className="text-2xl font-extrabold text-green-700">98</span>
-                                            <span className="text-xs font-bold text-green-600">/100</span>
+                                            <span className="text-xs font-bold text-green-600">%</span>
                                         </div>
                                     </div>
                                 </div>
@@ -147,10 +147,10 @@ const PremiumMarket = () => {
                                             className="text-sm font-semibold text-slate-500">Tấn</span></p>
                                     </div>
                                     <div className="bg-yellow-50 p-3 rounded-xl border border-yellow-100">
-                                        <p className="text-xs text-yellow-700 font-medium uppercase mb-1">Điểm uy tín</p>
+                                        <p className="text-xs text-yellow-700 font-medium uppercase mb-1">Độ tinh khiết</p>
                                         <div className="flex items-center gap-1">
                                             <span className="text-2xl font-extrabold text-yellow-600">75</span>
-                                            <span className="text-xs font-bold text-yellow-600">/100</span>
+                                            <span className="text-xs font-bold text-yellow-600">%</span>
                                         </div>
                                     </div>
                                 </div>
@@ -211,10 +211,10 @@ const PremiumMarket = () => {
                                             className="text-sm font-semibold text-slate-500">Tấn</span></p>
                                     </div>
                                     <div className="bg-green-50 p-3 rounded-xl border border-green-100">
-                                        <p className="text-xs text-green-700 font-medium uppercase mb-1">Điểm uy tín</p>
+                                        <p className="text-xs text-green-700 font-medium uppercase mb-1">Độ tinh khiết</p>
                                         <div className="flex items-center gap-1">
                                             <span className="text-2xl font-extrabold text-green-700">92</span>
-                                            <span className="text-xs font-bold text-green-600">/100</span>
+                                            <span className="text-xs font-bold text-green-600">%</span>
                                         </div>
                                     </div>
                                 </div>
@@ -275,10 +275,10 @@ const PremiumMarket = () => {
                                             className="text-sm font-semibold text-slate-500">Tấn</span></p>
                                     </div>
                                     <div className="bg-red-50 p-3 rounded-xl border border-red-100">
-                                        <p className="text-xs text-red-700 font-medium uppercase mb-1">Điểm uy tín</p>
+                                        <p className="text-xs text-red-700 font-medium uppercase mb-1">Độ tinh khiết</p>
                                         <div className="flex items-center gap-1">
                                             <span className="text-2xl font-extrabold text-red-600">45</span>
-                                            <span className="text-xs font-bold text-red-600">/100</span>
+                                            <span className="text-xs font-bold text-red-600">%</span>
                                         </div>
                                     </div>
                                 </div>
@@ -339,10 +339,10 @@ const PremiumMarket = () => {
                                             className="text-sm font-semibold text-slate-500">Tấn</span></p>
                                     </div>
                                     <div className="bg-green-50 p-3 rounded-xl border border-green-100">
-                                        <p className="text-xs text-green-700 font-medium uppercase mb-1">Điểm uy tín</p>
+                                        <p className="text-xs text-green-700 font-medium uppercase mb-1">Độ tinh khiết</p>
                                         <div className="flex items-center gap-1">
                                             <span className="text-2xl font-extrabold text-green-700">95</span>
-                                            <span className="text-xs font-bold text-green-600">/100</span>
+                                            <span className="text-xs font-bold text-green-600">%</span>
                                         </div>
                                     </div>
                                 </div>

@@ -359,6 +359,7 @@ public class AppDbContext : DbContext
             e.Property(i => i.InvoiceFileUrl).HasColumnName("invoice_file_url");
             e.Property(i => i.Subtotal).HasColumnName("subtotal").HasPrecision(14, 2);
             e.Property(i => i.VatAmount).HasColumnName("vat_amount").HasPrecision(14, 2);
+            e.Property(i => i.CommissionFee).HasColumnName("commission_fee").HasPrecision(14, 2);
             e.Property(i => i.TotalAmount).HasColumnName("total_amount").HasPrecision(14, 2);
             e.Property(i => i.Status).HasColumnName("status").HasConversion<string>();
             e.Property(i => i.UploadedBy).HasColumnName("uploaded_by");
