@@ -1,6 +1,7 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import PrivateRoute from './app/PrivateRoute';
+import PageTracker from './app/PageTracker';
 
 // Auth
 import LoginPage from './features/auth/LoginPage';
@@ -67,6 +68,7 @@ function App() {
   return (
     <ToastProvider>
       <Router>
+        <PageTracker />
         <Routes>
           {/* ── Auth (public) ── */}
           <Route path="/dang-nhap" element={<LoginPage />} />
