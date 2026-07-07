@@ -10,7 +10,8 @@ const ROLES = [
   { value: 'DRIVER', label: 'Tài xế vận chuyển', icon: '🚛', desc: 'Tài xế nhận đơn vận chuyển hàng hóa', color: '#f97316' },
 ];
 
-const STEPS = ['Chọn vai trò', 'Thông tin cá nhân', 'Thông tin nghề nghiệp'];
+const IS_MVP_MODE = true; // Bật cờ này để bỏ qua bước 3 (chỉ giữ lại 2 bước cho MVP)
+const STEPS = IS_MVP_MODE ? ['Chọn vai trò', 'Thông tin cá nhân'] : ['Chọn vai trò', 'Thông tin cá nhân', 'Thông tin nghề nghiệp'];
 
 export default function RegisterPage() {
   const navigate = useNavigate();
@@ -47,8 +48,32 @@ export default function RegisterPage() {
       if (!form.fullName || !form.email || !form.password) { setError('Vui lòng điền đầy đủ thông tin bắt buộc.'); return; }
       if (form.password !== form.confirmPassword) { setError('Mật khẩu xác nhận không khớp.'); return; }
       if (form.password.length < 6) { setError('Mật khẩu phải có ít nhất 6 ký tự.'); return; }
+      
+      if (IS_MVP_MODE) {
+        handleSubmitMVP();
+        return;
+      }
     }
     setStep(s => s + 1);
+  };
+
+  const handleSubmitMVP = async () => {
+    setError('');
+    setLoading(true);
+    try {
+      const payload = {
+        email: form.email, password: form.password, fullName: form.fullName,
+        phone: form.phone || undefined, role: selectedRole,
+        // Điền data giả lập để pass validation của Backend (DEPOT/FACTORY cần CompanyName)
+        companyName: ['DEPOT', 'FACTORY'].includes(selectedRole) ? (form.fullName + ' Company') : undefined,
+      };
+      const res = await register(payload);
+      navigate(ROLE_HOME[res.role] || '/');
+    } catch (err) {
+      setError(err.message || 'Đăng ký thất bại. Vui lòng thử lại.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -257,10 +282,16 @@ export default function RegisterPage() {
                 <button type="button" onClick={() => setStep(0)}
                   className="flex-1 py-3 rounded-xl text-sm font-medium text-gray-600 transition-all"
                   style={{ border: '1px solid #e5e7eb' }}>← Quay lại</button>
-                <button type="submit"
+                <button type="submit" disabled={loading}
                   className="flex-1 py-3 rounded-xl text-sm font-semibold text-white transition-all"
-                  style={{ background: 'linear-gradient(135deg, #16a34a, #15803d)', boxShadow: '0 4px 15px rgba(22,163,74,0.35)' }}>
-                  Tiếp theo →
+                  style={{ 
+                    background: loading ? '#86efac' : 'linear-gradient(135deg, #16a34a, #15803d)', 
+                    boxShadow: loading ? 'none' : '0 4px 15px rgba(22,163,74,0.35)',
+                    cursor: loading ? 'not-allowed' : 'pointer'
+                  }}>
+                  {IS_MVP_MODE 
+                    ? (loading ? '⏳ Đang đăng ký...' : '✓ Hoàn tất đăng ký') 
+                    : 'Tiếp theo →'}
                 </button>
               </div>
             </form>
