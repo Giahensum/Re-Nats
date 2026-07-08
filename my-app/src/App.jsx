@@ -5,6 +5,7 @@ import PrivateRoute from './app/PrivateRoute';
 // Auth
 import LoginPage from './features/auth/LoginPage';
 import RegisterPage from './features/auth/RegisterPage';
+import AdminDashboard from './features/admin/AdminDashboard';
 
 // Public
 import LandingPage from './features/home/LandingPage';
@@ -113,6 +114,9 @@ function App() {
           <Route path="/van-chuyen/chuyen-xe" element={<P roles={['DRIVER']}><StartOrder /></P>} />
           <Route path="/van-chuyen/checkin" element={<P roles={['DRIVER']}><CheckinOrder /></P>} />
           <Route path="/van-chuyen/di-chuyen" element={<P roles={['DRIVER']}><CheckinOrderStep2 /></P>} />
+
+          {/* ── Admin routes ── */}
+          <Route path="/admin/dashboard" element={<P roles={['ADMIN']}><AdminDashboard /></P>} />
 
           {/* ── Shared (đăng nhập là vào được) ── */}
           <Route path="/hoa-don/:id" element={<P roles={['SELLER', 'DEPOT', 'FACTORY', 'DRIVER', 'ADMIN']}><Invoice /></P>} />

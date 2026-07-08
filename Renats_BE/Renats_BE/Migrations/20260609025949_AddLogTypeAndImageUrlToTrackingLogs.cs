@@ -51,12 +51,13 @@ namespace Renats_BE.Migrations
                 oldClrType: typeof(DateTime),
                 oldType: "timestamp with time zone");
 
-            migrationBuilder.AddColumn<string>(
-                name: "log_type",
-                table: "transport_tracking_logs",
-                type: "character varying(50)",
-                maxLength: 50,
-                nullable: true);
+            migrationBuilder.Sql(@"
+                DO $$ BEGIN
+                    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='transport_tracking_logs' AND column_name='log_type') THEN
+                        ALTER TABLE transport_tracking_logs ADD COLUMN log_type character varying(50);
+                    END IF;
+                END $$;
+            ");
 
             migrationBuilder.AlterColumn<DateTime>(
                 name: "pickup_time",
