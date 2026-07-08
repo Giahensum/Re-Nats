@@ -1,32 +1,50 @@
+using System;
+using System.IO;
+using System.Text.Json;
 using Npgsql;
-var connStr = "Host=localhost;Port=5432;Database=Renats;Username=postgres;Password=123";
-using var conn = new NpgsqlConnection(connStr);
-await conn.OpenAsync();
 
-Console.WriteLine("=== PICKUP RESULTS ===");
-using (var cmd = new NpgsqlCommand(
-    "SELECT pr.id, pr.pickup_request_id, pr.material_label, pr.weight_kg, r.status FROM pickup_results pr JOIN pickup_requests r ON pr.pickup_request_id = r.id",
-    conn))
+var appSettingsPath = @"d:\Kỳ 8\EXE201\ga4\Re-Nats\Renats_BE\Renats_BE\appsettings.json";
+
+if (!File.Exists(appSettingsPath))
 {
-    using (var reader = await cmd.ExecuteReaderAsync())
-    {
-        while (await reader.ReadAsync())
-        {
-            Console.WriteLine($"MaterialLabel: {reader["material_label"]}, Weight: {reader["weight_kg"]}, Status: {reader["status"]}");
-        }
-    }
+    Console.WriteLine($"Error: Could not find appsettings.json at {appSettingsPath}");
+    return;
 }
 
-Console.WriteLine("\n=== FACTORIES ===");
-using (var cmd2 = new NpgsqlCommand(
-    "SELECT id, company_name, primary_material_type, accepted_material_types, is_profile_complete FROM factories",
-    conn))
+string connStr;
+try
 {
-    using (var reader2 = await cmd2.ExecuteReaderAsync())
+    var json = File.ReadAllText(appSettingsPath);
+    using var doc = JsonDocument.Parse(json);
+    connStr = doc.RootElement
+        .GetProperty("ConnectionStrings")
+        .GetProperty("DefaultConnection")
+        .GetString() ?? throw new Exception("ConnectionString is null");
+}
+catch (Exception ex)
+{
+    Console.WriteLine($"Error parsing appsettings.json: {ex.Message}");
+    return;
+}
+
+Console.WriteLine("Connecting to database...");
+
+try
+{
+    using var conn = new NpgsqlConnection(connStr);
+    await conn.OpenAsync();
+    Console.WriteLine("Connection successful!");
+
+    Console.WriteLine("Adding missing image_url column to transport_tracking_logs...");
+    using (var cmd = new NpgsqlCommand(
+        "ALTER TABLE transport_tracking_logs ADD COLUMN IF NOT EXISTS image_url TEXT;", 
+        conn))
     {
-        while (await reader2.ReadAsync())
-        {
-            Console.WriteLine($"Name: {reader2["company_name"]}, Primary: {reader2["primary_material_type"]}, Accepted: {reader2["accepted_material_types"]}, Complete: {reader2["is_profile_complete"]}");
-        }
+        await cmd.ExecuteNonQueryAsync();
     }
+    Console.WriteLine("Column added successfully!");
+}
+catch (Exception ex)
+{
+    Console.WriteLine($"Failed to add column: {ex.Message}");
 }
