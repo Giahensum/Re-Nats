@@ -68,6 +68,25 @@ public static class DataSeeder
     // ── 0. Thêm enum values vào PostgreSQL enum type ─────────────────────────────
     private static async Task EnsureEnumValuesAsync(AppDbContext db)
     {
+        try
+        {
+            var conn = (Npgsql.NpgsqlConnection)db.Database.GetDbConnection();
+            if (conn.State != System.Data.ConnectionState.Open)
+                await conn.OpenAsync();
+            
+            using var cmd = conn.CreateCommand();
+            cmd.CommandText = "SELECT COUNT(1) FROM pg_type WHERE typname = 'user_role'";
+            var count = Convert.ToInt32(await cmd.ExecuteScalarAsync());
+            if (count == 0)
+            {
+                return;
+            }
+        }
+        catch
+        {
+            return;
+        }
+
         var sql = @"
             DO $$
             BEGIN
@@ -87,10 +106,10 @@ public static class DataSeeder
         ";
         await db.Database.ExecuteSqlRawAsync(sql);
 
-        var conn = (Npgsql.NpgsqlConnection)db.Database.GetDbConnection();
-        if (conn.State != System.Data.ConnectionState.Open)
-            await conn.OpenAsync();
-        await conn.ReloadTypesAsync();
+        var connection = (Npgsql.NpgsqlConnection)db.Database.GetDbConnection();
+        if (connection.State != System.Data.ConnectionState.Open)
+            await connection.OpenAsync();
+        await connection.ReloadTypesAsync();
     }
 
     // ── 1. Seed Seller ────────────────────────────────────────────────────────────
@@ -106,7 +125,7 @@ public static class DataSeeder
             INSERT INTO users (id, email, password_hash, role, full_name, phone, is_active, created_at, updated_at)
             VALUES (
                 '{userId}', 'giango9981@gmail.com', 'Renats@2025',
-                'SELLER'::user_role, 'Ngô Sỹ Giá', '0912345678',
+                'SELLER', 'Ngô Sỹ Giá', '0912345678',
                 true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
             );
         ");
@@ -197,7 +216,7 @@ public static class DataSeeder
             INSERT INTO users (id, email, password_hash, role, full_name, phone, is_active, created_at, updated_at)
             VALUES (
                 '{factoryUserId}', 'factory@renats.vn', 'Renats@2025',
-                'FACTORY'::user_role, 'Công ty Tái Chế Xanh Việt Nam', '0901234567',
+                'FACTORY', 'Công ty Tái Chế Xanh Việt Nam', '0901234567',
                 true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
             );
         ");
@@ -228,7 +247,7 @@ public static class DataSeeder
             INSERT INTO users (id, email, password_hash, role, full_name, phone, is_active, created_at, updated_at)
             VALUES (
                 '{depot1UserId}', 'depot1@renats.vn', 'Renats@2025',
-                'DEPOT'::user_role, 'Vựa Phế Liệu Minh Khôi', '0909111222',
+                'DEPOT', 'Vựa Phế Liệu Minh Khôi', '0909111222',
                 true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
             );
         ");
@@ -259,7 +278,7 @@ public static class DataSeeder
             INSERT INTO users (id, email, password_hash, role, full_name, phone, is_active, created_at, updated_at)
             VALUES (
                 '{depot2UserId}', 'depot2@renats.vn', 'Renats@2025',
-                'DEPOT'::user_role, 'Đại Lý Thu Gom Thành Đạt', '0909333444',
+                'DEPOT', 'Đại Lý Thu Gom Thành Đạt', '0909333444',
                 true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
             );
         ");
@@ -290,7 +309,7 @@ public static class DataSeeder
             INSERT INTO users (id, email, password_hash, role, full_name, phone, is_active, created_at, updated_at)
             VALUES (
                 '{depot3UserId}', 'depot3@renats.vn', 'Renats@2025',
-                'DEPOT'::user_role, 'Công Ty Môi Trường Xanh', '0909555666',
+                'DEPOT', 'Công Ty Môi Trường Xanh', '0909555666',
                 true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
             );
         ");
@@ -445,7 +464,7 @@ public static class DataSeeder
             INSERT INTO users (id, email, password_hash, role, full_name, phone, is_active, created_at, updated_at)
             VALUES (
                 '{driverUserId}', 'driver@renats.vn', 'Renats@2025',
-                'DRIVER'::user_role, 'Tài xế Nguyễn Văn Minh', '0988777666',
+                'DRIVER', 'Tài xế Nguyễn Văn Minh', '0988777666',
                 true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
             );
         ");
